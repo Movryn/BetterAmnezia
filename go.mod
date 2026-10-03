@@ -5,11 +5,15 @@ go 1.25.0
 require (
 	github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
+	github.com/wailsapp/go-webview2 v1.0.23
 	golang.org/x/crypto v0.42.0
 	golang.org/x/sys v0.36.0
 	golang.org/x/text v0.29.0
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2
+	rsc.io/qr v0.2.0
 )
+
+require github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 
 require (
 	github.com/amnezia-vpn/amneziawg-go/v3 v3.1.20260814

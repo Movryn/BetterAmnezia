@@ -12,6 +12,7 @@ import (
 
 	"github.com/amnezia-vpn/amneziawg-windows-client/l18n"
 	"github.com/amnezia-vpn/amneziawg-windows-client/manager"
+	"github.com/amnezia-vpn/amneziawg-windows-client/webui"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
 
 	"github.com/lxn/walk"
@@ -85,6 +86,7 @@ func (tray *Tray) setup() error {
 		{label: l18n.Sprintf("&Import tunnel(s) from file…"), handler: tray.onImport, enabled: true, hidden: !IsAdmin},
 		{separator: true},
 		{label: l18n.Sprintf("&About AmneziaWG…"), handler: tray.onAbout, enabled: true},
+		{label: "Switch to the &new interface", handler: onSwitchToNewUI, enabled: true, hidden: !webui.Available()},
 		{label: l18n.Sprintf("E&xit"), handler: onQuit, enabled: true, hidden: !IsAdmin},
 	} {
 		var action *walk.Action
@@ -384,6 +386,17 @@ func (tray *Tray) onAbout() {
 	} else {
 		onAbout(nil)
 	}
+}
+
+// onSwitchToNewUI restarts the UI process; the manager relaunches it and the
+// new interface is picked up.
+func onSwitchToNewUI() {
+	if err := webui.SetLegacyUI(false); err != nil {
+		showError(err, nil)
+		return
+	}
+	webui.ClearStartFailure()
+	walk.App().Exit(0)
 }
 
 func (tray *Tray) onImport() {
