@@ -163,11 +163,13 @@ func main() {
 	checkForWow64()
 
 	// Keep our data apart from the official AmneziaWG client. Only the
-	// elevated and service processes may create the protected directory.
+	// services, which run as Local System, create the protected directory:
+	// it is owned by SYSTEM, and an elevated administrator may not assign
+	// that owner (ERROR_INVALID_OWNER).
 	createData := false
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-		case "/installmanagerservice", "/managerservice", "/installtunnelservice", "/tunnelservice":
+		case "/managerservice", "/tunnelservice":
 			createData = true
 		}
 	}
