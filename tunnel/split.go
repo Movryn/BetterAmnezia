@@ -389,15 +389,18 @@ func (s *splitRuntime) tunnelDialer() splittunnel.DialFunc {
 		d := &net.Dialer{Timeout: 10 * time.Second}
 		if ap, err := netip.ParseAddrPort(address); err == nil {
 			local := s.tunV4
-			if ap.Addr().Is6() {
+			if ap.Addr().Unmap().Is6() {
 				local = s.tunV6
 			}
-			if local.IsValid() {
-				if strings.HasPrefix(network, "udp") {
-					d.LocalAddr = &net.UDPAddr{IP: local.AsSlice()}
-				} else {
-					d.LocalAddr = &net.TCPAddr{IP: local.AsSlice()}
-				}
+			if !local.IsValid() {
+				// Without a tunnel address of this family the connection
+				// would leave through the regular network.
+				return nil, errors.New("the tunnel has no address for " + ap.Addr().String())
+			}
+			if strings.HasPrefix(network, "udp") {
+				d.LocalAddr = &net.UDPAddr{IP: local.AsSlice()}
+			} else {
+				d.LocalAddr = &net.TCPAddr{IP: local.AsSlice()}
 			}
 		}
 		return d.DialContext(ctx, network, address)

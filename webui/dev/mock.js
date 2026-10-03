@@ -20,9 +20,10 @@
     autoTunnel: { enabled: true, tunnel: "amsterdam-awg", trustedSsids: ["HomeNet", "Office-*"], onUntrustedWifi: "connect", onEthernet: "none", onOther: "none", rules: [{ ssid: "Cafe *", action: "connect", tunnel: "tokyo-wg" }], debounceSeconds: 3 },
     health: { enabled: true, handshakeTimeoutSeconds: 180, pingTarget: "", pingIntervalSeconds: 30, pingFailuresForRestart: 3, restartCooldownSeconds: 60 },
     dynamicDns: { enabled: true, intervalSeconds: 300 },
-    lockdown: { enabled: false, allowLan: true }
+    lockdown: { enabled: false, allowLan: true },
+    remoteControl: false
   };
-  let prefs = { theme: params.get("theme") || "dark", accent: params.get("accent") || "#7c5cff", language: params.get("lang") || "en", closeToTray: true, startMinimized: true, notifications: true, remoteControl: false, compact: false };
+  let prefs = { theme: params.get("theme") || "dark", accent: params.get("accent") || "#7c5cff", language: params.get("lang") || "en", closeToTray: true, startMinimized: true, notifications: true, compact: false };
   let rx = 120e6, tx = 9e6;
   let logs = [];
   let cursor = 0;

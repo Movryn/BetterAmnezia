@@ -84,6 +84,11 @@ type Settings struct {
 	Lockdown   Lockdown   `json:"lockdown"`
 	// SplitDriverPath points at mullvad-split-tunnel.sys for app bypass.
 	SplitDriverPath string `json:"splitDriverPath,omitempty"`
+	// RemoteControl lets non-elevated processes start and stop tunnels with
+	// amneziawg.exe /connect and friends. It lives here rather than in the
+	// per-user interface preferences so that only administrators can turn
+	// it on.
+	RemoteControl bool `json:"remoteControl,omitempty"`
 }
 
 // DefaultSettings returns the settings used before anything is saved.

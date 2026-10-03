@@ -31,3 +31,7 @@ Windows assigns a unique GUID to each new AmneziaWG adapter. The application tak
 ### Adapter Lifetime
 
 AmneziaWG's network adapter is created dynamically when a tunnel is started and destroyed when a tunnel is stopped. This means that additional filters, address families, or protocols should be bound to the adapter programmatically, possibly through use of dangerous script execution in the configuration file or by way of automatic NDIS layer binding.
+
+### Split Tunneling
+
+Per-tunnel split tunneling changes the behavior described above: in *include* mode the tunnel does not take the default route and the kill switch is off; in *exclude* mode excluded destinations get more specific routes through the regular gateway and are permitted by the kill switch; domain rules route the addresses returned by a DNS forwarder running inside the tunnel service. See [`splittunnel.md`](splittunnel.md).

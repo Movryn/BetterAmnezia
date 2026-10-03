@@ -16,3 +16,7 @@
 *.syso
 .idea
 *.ico
+
+# Node tooling for UI tests
+/node_modules
+/package-lock.json

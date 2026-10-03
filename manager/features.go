@@ -68,11 +68,14 @@ func applySettings(s *extras.Settings) error {
 	return nil
 }
 
+// anyTunnelStarted reports whether a tunnel is up. Tunnels whose state is
+// still being discovered count as up, so lockdown does not cut a running
+// tunnel off while the manager starts.
 func anyTunnelStarted() bool {
 	trackedTunnelsLock.Lock()
 	defer trackedTunnelsLock.Unlock()
 	for _, state := range trackedTunnels {
-		if state == TunnelStarted {
+		if state == TunnelStarted || state == TunnelUnknown {
 			return true
 		}
 	}

@@ -24,7 +24,6 @@ type Prefs struct {
 	CloseToTray    bool   `json:"closeToTray"`
 	StartMinimized bool   `json:"startMinimized"`
 	Notifications  bool   `json:"notifications"`
-	RemoteControl  bool   `json:"remoteControl"`
 	LegacyUI       bool   `json:"legacyUi"`
 	Compact        bool   `json:"compact"`
 	// LastTunnel is the tunnel selected when the UI was last closed.

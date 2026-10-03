@@ -225,6 +225,11 @@ func (b *bridge) subscribe() {
 			json.Unmarshal(payload, &v)
 			b.emit(event, v)
 			switch event {
+			case "settings":
+				var s extras.Settings
+				if json.Unmarshal(payload, &s) == nil {
+					remoteControlEnabled.Store(s.RemoteControl)
+				}
 			case "health":
 				if m, ok := v.(map[string]any); ok {
 					b.w.notify(fmt.Sprint(m["tunnel"]), tr("Restarting unhealthy tunnel: ")+fmt.Sprint(m["message"]))
@@ -237,6 +242,10 @@ func (b *bridge) subscribe() {
 		}),
 	)
 	go func() {
+		var s extras.Settings
+		if manager.IPCClientExt("settings.get", nil, &s) == nil {
+			remoteControlEnabled.Store(s.RemoteControl)
+		}
 		tunnels, err := manager.IPCClientTunnels()
 		if err == nil {
 			b.stateMu.Lock()
@@ -972,6 +981,7 @@ func (b *bridge) settingsSet(params json.RawMessage) (any, error) {
 	if err := json.Unmarshal(resp, &s); err != nil {
 		return nil, err
 	}
+	remoteControlEnabled.Store(s.RemoteControl)
 	return &s, nil
 }
 

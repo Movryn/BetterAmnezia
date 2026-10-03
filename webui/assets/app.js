@@ -188,7 +188,7 @@
 
   const state = {
     info: { version: "", isAdmin: true, updateState: 0 },
-    prefs: { theme: "system", accent: "#7c5cff", language: "auto", closeToTray: true, startMinimized: true, notifications: true, remoteControl: false, compact: false },
+    prefs: { theme: "system", accent: "#7c5cff", language: "auto", closeToTray: true, startMinimized: true, notifications: true, compact: false },
     tunnels: [],
     loaded: false,
     selected: null,
@@ -1581,8 +1581,17 @@
             { value: "0.0.0.0", label: t("Local network (0.0.0.0)") }
           ], v => { p.listen = v === "127.0.0.1" ? undefined : v; if (!p.listen) delete p.listen; render(); })),
           settingRow(t("Username"), t("optional"), h("input", { class: "input", value: p.username || "", style: { width: "180px" }, oninput: e => { p.username = e.target.value || undefined; changed(); } })),
-          settingRow(t("Password"), t("optional"), h("input", { class: "input", type: "password", value: p.password || "", style: { width: "180px" }, oninput: e => { p.password = e.target.value || undefined; changed(); } }))
+          settingRow(t("Password"), t("optional"), h("input", { class: "input", type: "password", value: p.password || "", style: { width: "180px" }, oninput: e => { p.password = e.target.value || undefined; changed(); renderLanWarning(); } })),
+          h("div", { id: "proxy-lan-warning" }, lanWarning())
         ] : null);
+      function lanWarning() {
+        return p.listen === "0.0.0.0" && !p.password ? h("div", { class: "card-body" }, h("div", { class: "callout warn" }, icon("alert"),
+          h("span", null, t("Anyone on your local network can use this proxy to reach the tunnel. Set a username and password.")))) : null;
+      }
+      function renderLanWarning() {
+        const el = document.getElementById("proxy-lan-warning");
+        if (el) { el.innerHTML = ""; append(el, lanWarning()); }
+      }
     }
 
     return { render: renderPage, open, dirty, confirmLeave };
@@ -1746,7 +1755,7 @@
 
         h("div", { class: "section-title" }, t("Remote control")),
         h("div", { class: "card" },
-          settingRow(t("Allow command-line control"), null, switchEl(!!p.remoteControl, v => setPrefs({ remoteControl: v }))),
+          settingRow(t("Allow command-line control"), null, switchEl(!!(s && s.remoteControl), v => updateSettings(s => { s.remoteControl = v; }), { disabled: ro || !s })),
           h("div", { class: "card-body" },
             h("div", { class: "muted", style: { fontSize: "12.5px", marginBottom: "8px" } }, t("Lets scripts and automation tools connect tunnels without elevation:")),
             h("pre", { class: "mono", style: { margin: 0, padding: "10px 12px", background: "var(--code-bg)", border: "1px solid var(--border)", borderRadius: "8px", whiteSpace: "pre-wrap" } },

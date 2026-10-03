@@ -190,6 +190,7 @@
     "This computer only (127.0.0.1)": "Только этот компьютер (127.0.0.1)",
     "Local network (0.0.0.0)": "Локальная сеть (0.0.0.0)",
     "Username": "Имя пользователя",
+    "Anyone on your local network can use this proxy to reach the tunnel. Set a username and password.": "Любой в вашей локальной сети сможет использовать этот прокси для доступа к туннелю. Задайте имя пользователя и пароль.",
     "Password": "Пароль",
     "optional": "необязательно",
     "Unsaved changes": "Несохранённые изменения",

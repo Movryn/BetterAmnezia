@@ -1,28 +1,71 @@
-# [AmneziaWG](https://amnezia.org/) for Windows
+# BetterAmnezia
 
-This is a fully-featured AmneziaWG client for Windows that uses [Wintun](https://www.wintun.net/). It is the only official and recommended way of using AmneziaWG on Windows.
+A better [AmneziaWG](https://amnezia.org/) client for Windows. It keeps the solid core of the official AmneziaWG/WireGuard for Windows client (Wintun, the tunnel service, the encrypted configuration store, the kill switch) and adds a modern interface and the features people kept asking for, many of them modeled on [WG Tunnel](https://github.com/wgtunnel/android) for Android.
 
-## Download &amp; Install
+## Features
 
-If you've come here looking to simply run WireGuard for Windows, [the main download page has links](https://www.wireguard.com/install/). There you will find two things:
+**Interface**
+- New WebView2 interface with System, Light, Dark and true-black AMOLED themes, accent colours, compact mode, English and Russian.
+- Live throughput chart, transfer totals, handshake age, endpoint and per-peer details.
+- Editor with syntax highlighting for WireGuard and AmneziaWG parameters, live validation, key generation, a kill switch toggle and a generator for AmneziaWG obfuscation parameters.
+- Import `.conf`, `.zip` and AmneziaVPN `vpn://` keys from files, the clipboard or by dropping files on the window. Export single tunnels or everything as a ZIP. Share as a `vpn://` key or QR code for phones.
+- Rename, duplicate, delete and restart tunnels; tray menu with per-tunnel toggles and notifications.
+- The classic interface is still available (Settings → Advanced) and is used automatically when the WebView2 runtime is missing, e.g. on Windows 7.
 
-- [The WireGuard Installer](https://download.wireguard.com/windows-client/wireguard-installer.exe) &ndash; This selects the most recent version for your architecture, downloads it, checks signatures and hashes, and installs it.
-- [Standalone MSIs](https://download.wireguard.com/windows-client/) &ndash; These are for system admins who wish to deploy the MSIs directly. For most end users, the ordinary installer takes care of downloading these automatically.
+**Split tunneling** (per tunnel; see [`docs/splittunnel.md`](docs/splittunnel.md))
+- *Exclude* mode (everything through the VPN except…) and *include* mode (only … through the VPN).
+- IP addresses and CIDR ranges, IPv4 and IPv6.
+- Domains with wildcards: `example.com`, `*.example.com`, `*example.com`, `api.*.example.com`, `=exact.example.com`. One-click presets for YouTube, Discord, Telegram, Instagram, X, ChatGPT, Claude, Netflix, Spotify, Twitch, Steam and LinkedIn.
+- Applications and whole folders: *VPN only* (per-app kill switch), *Block*, and *Bypass VPN* (with the optional split tunnel driver).
+- Keep the LAN outside the VPN.
+- DNS forwarder with plain DNS, DNS over TLS and DNS over HTTPS upstreams and leak blocking.
+- Local SOCKS5 and HTTP proxy bound to the tunnel, with optional authentication.
+
+**Automation and reliability**
+- Auto-tunneling: connect or disconnect depending on the network: trusted Wi-Fi networks, untrusted Wi-Fi, Ethernet, other networks, and per-SSID rules with wildcards.
+- Health monitor: restarts a tunnel that keeps sending without receiving anything or completing a handshake, optionally also based on pings through the tunnel.
+- Dynamic DNS: re-resolves endpoint host names and moves running tunnels to the new address without reconnecting.
+- Lockdown mode: blocks all traffic while no tunnel is connected, optionally allowing the LAN.
+- Remote control for scripts and automation tools, without elevation (enable it under Settings → Remote control):
+
+  ```text
+  amneziawg.exe /connect <tunnel>
+  amneziawg.exe /disconnect <tunnel>
+  amneziawg.exe /toggle <tunnel>
+  amneziawg.exe /disconnectall
+  ```
+
+  Exit codes: 0 success, 1 failure, 2 remote control disabled, 3 BetterAmnezia not running.
+
+## Requirements
+
+Windows 10 or 11 with the [WebView2 runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (preinstalled on current Windows). The classic interface works without it.
+
+## Building
+
+See [`docs/buildrun.md`](docs/buildrun.md). In short, on Windows run `build.bat`; on Linux run `make`.
+
+The interface lives in [`webui/assets`](webui/assets) as plain HTML, CSS and JavaScript and is embedded into the binary. To work on it without Windows, open [`webui/dev/index.html`](webui/dev/index.html) in a browser; it uses a mock of the Go bridge. [`webui/dev/flows.test.js`](webui/dev/flows.test.js) runs the main UI flows with Playwright.
+
+Go packages with platform independent logic have unit tests that run anywhere:
+
+```text
+go test ./splittunnel ./extras ./importer
+```
 
 ## Documentation
 
-In addition to this [`README.md`](README.md), the following documents are also available:
-
-- [`adminregistry.md`](docs/adminregistry.md) &ndash; A list of registry keys settable by the system administrator for changing the behavior of the application.
-- [`attacksurface.md`](docs/attacksurface.md) &ndash; A discussion of the various components from a security perspective, so that future auditors of this code have a head start in assessing its security design.
-- [`buildrun.md`](docs/buildrun.md) &ndash; Instructions on building, localizing, running, and developing for this repository.
-- [`enterprise.md`](docs/enterprise.md) &ndash; A summary of various features and tips for making the application usable in enterprise settings.
-- [`netquirk.md`](docs/netquirk.md) &ndash; A description of various networking quirks and "kill-switch" semantics.
-- [`userregistry.md`](docs/userregistry.md) &ndash; A list of registry keys settable by the user for changing the behavior of the application.
+- [`splittunnel.md`](docs/splittunnel.md) &ndash; How split tunneling, the DNS forwarder, app rules and the local proxy work.
+- [`adminregistry.md`](docs/adminregistry.md) &ndash; Registry keys for administrators.
+- [`attacksurface.md`](docs/attacksurface.md) &ndash; Security design of the components.
+- [`buildrun.md`](docs/buildrun.md) &ndash; Building, localizing, running and developing.
+- [`enterprise.md`](docs/enterprise.md) &ndash; Enterprise deployment notes.
+- [`netquirk.md`](docs/netquirk.md) &ndash; Networking quirks and kill switch semantics.
+- [`userregistry.md`](docs/userregistry.md) &ndash; Registry keys for users.
 
 ## License
 
-This repository is MIT-licensed.
+This repository is MIT-licensed. The optional split tunnel driver is a separate program by Mullvad VPN AB, licensed under GPL-3.0-or-later or MPL-2.0, and is not part of this repository.
 
 ```text
 Copyright (C) 2018-2022 WireGuard LLC. All Rights Reserved.

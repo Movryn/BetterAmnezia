@@ -20,7 +20,24 @@ C:\Projects\amneziawg-windows-client> amd64\amneziawg.exe
 
 Alternatively, you can craft your own installer using the `quickinstall.bat` script.
 
+### Working on the interface
+
+The interface is plain HTML, CSS and JavaScript in `webui/assets`, embedded into the binary at build time. It talks to Go only through the bridge in `webui/bridge.go` (`window.__host.post` for requests, `window.__bridge.reply`/`event` for answers and notifications).
+
+To iterate without Windows, open `webui/dev/index.html` in a browser. `webui/dev/mock.js` stands in for the bridge; query parameters select variants: `?theme=light|dark|amoled`, `?accent=%23ff7700`, `?lang=ru`, `?empty`, `?readonly`, `?update`, `?driver`. The main flows are covered by a Playwright script:
+
+```text
+$ npm install playwright
+$ node webui/dev/flows.test.js
+```
+
+Inside the app, set the environment variable `BETTERAMNEZIA_DEVTOOLS=1` for the UI process to enable the WebView2 developer tools (F12).
+
+The new interface needs WebView2 runtime 111 or newer. When the runtime is missing, the user selects the classic interface, or the new one failed to start within the last day, the classic `walk` interface in `ui/` is used.
+
 ### Optional: Localizing
+
+The new interface has its own dictionaries in `webui/assets/i18n.js` (page) and `webui/i18n.go` (tray menu, dialogs, notifications). English strings are the keys. The steps below apply to the classic interface.
 
 To translate AmneziaWG UI to your language:
 

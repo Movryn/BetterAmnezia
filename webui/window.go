@@ -15,8 +15,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -46,6 +48,9 @@ var (
 	IsAdmin = false
 
 	mainWindow *window
+
+	// remoteControlEnabled mirrors the service setting; see extras.Settings.
+	remoteControlEnabled atomic.Bool
 )
 
 // copyDataStruct is COPYDATASTRUCT.
@@ -69,10 +74,20 @@ type window struct {
 	quitting       bool
 }
 
-// Available reports whether the WebView2 runtime is installed.
+// minRuntimeMajor is the oldest WebView2 runtime the page is written for
+// (CSS color-mix and container queries).
+const minRuntimeMajor = 111
+
+// Available reports whether a recent enough WebView2 runtime is installed.
+// Windows 7 and 8.1 are stuck on runtime 109 and keep the classic UI.
 func Available() bool {
 	v, err := webviewloader.GetAvailableCoreWebView2BrowserVersionString("")
-	return err == nil && v != ""
+	if err != nil || v == "" {
+		return false
+	}
+	major, _, _ := strings.Cut(v, ".")
+	n, err := strconv.Atoi(major)
+	return err == nil && n >= minRuntimeMajor
 }
 
 func dataDir() string {
@@ -306,7 +321,7 @@ func (w *window) handleCommand(args []string) uintptr {
 		w.show()
 		return 1
 	}
-	if !loadPrefs().RemoteControl {
+	if !remoteControlEnabled.Load() {
 		return 2
 	}
 	go func() {
@@ -466,7 +481,9 @@ func (w *window) embed() error {
 	}
 	c.PutIsGeneralAutofillEnabled(false)
 	c.PutIsPasswordAutosaveEnabled(false)
-	c.AllowExternalDrag(false)
+	// Files dropped on the window are imported by the page, which cancels
+	// the browser's default navigation.
+	c.AllowExternalDrag(true)
 	w.applyTheme(loadPrefs().effectiveTheme())
 	c.Resize()
 	c.Init(bootstrapScript())
@@ -474,8 +491,10 @@ func (w *window) embed() error {
 	return nil
 }
 
-// Run shows the UI and returns when it exits.
-func Run() error {
+// Run shows the UI and returns when it exits. On error everything it
+// created is torn down again, so the classic UI can take over in the same
+// process.
+func Run() (err error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	if err := windows.CoInitializeEx(0, windows.COINIT_APARTMENTTHREADED); err != nil && !errors.Is(err, windows.Errno(1)) {
@@ -485,6 +504,22 @@ func Run() error {
 	w := &window{}
 	w.bridge = newBridge(w)
 	mainWindow = w
+	defer func() {
+		if err == nil {
+			return
+		}
+		if w.tray != nil {
+			w.tray.dispose()
+		}
+		if w.hwnd != 0 {
+			hwnd := w.hwnd
+			w.hwnd = 0
+			win.DestroyWindow(hwnd)
+		}
+		className, _ := windows.UTF16PtrFromString(WindowClass)
+		win.UnregisterClass(className)
+		mainWindow = nil
+	}()
 	if err := w.create(); err != nil {
 		return err
 	}
