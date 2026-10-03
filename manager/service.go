@@ -71,6 +71,8 @@ func (service *managerService) Execute(args []string, r <-chan svc.ChangeRequest
 	conf.RegisterStoreChangeCallback(func() { conf.MigrateUnencryptedConfigs(changeTunnelServiceConfigFilePath) })
 	conf.RegisterStoreChangeCallback(IPCServerNotifyTunnelsChange)
 
+	startFeatures()
+
 	procs := make(map[uint32]*uiProcess)
 	aliveSessions := make(map[uint32]bool)
 	procsLock := sync.Mutex{}
