@@ -18,7 +18,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/amnezia-vpn/amneziawg-windows/v3/tunnel"
+	"github.com/amnezia-vpn/amneziawg-windows-client/tunnel"
 
 	"github.com/amnezia-vpn/amneziawg-windows-client/elevate"
 	"github.com/amnezia-vpn/amneziawg-windows-client/l18n"
@@ -26,6 +26,7 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows-client/ringlogger"
 	"github.com/amnezia-vpn/amneziawg-windows-client/ui"
 	"github.com/amnezia-vpn/amneziawg-windows-client/updater"
+	"github.com/amnezia-vpn/amneziawg-windows-client/webui"
 )
 
 func setLogFile() {
@@ -71,6 +72,10 @@ func usage() {
 		"/managerservice",
 		"/tunnelservice CONFIG_PATH",
 		"/ui CMD_READ_HANDLE CMD_WRITE_HANDLE CMD_EVENT_HANDLE LOG_MAPPING_HANDLE",
+		"/connect TUNNEL_NAME",
+		"/disconnect TUNNEL_NAME",
+		"/toggle TUNNEL_NAME",
+		"/disconnectall",
 		"/dumplog [/tail]",
 		"/update",
 	}
@@ -241,7 +246,8 @@ func main() {
 			processToken.Close()
 		}
 		if isAdmin {
-			err := elevate.DropAllPrivileges(false)
+			// WebView2 needs to traverse directories; keep only that.
+			err := elevate.DropAllPrivilegesExcept("SeChangeNotifyPrivilege")
 			if err != nil {
 				fatal(err)
 			}
@@ -263,9 +269,27 @@ func main() {
 			fatal(err)
 		}
 		manager.InitializeIPCClient(readPipe, writePipe, eventPipe)
+		if !webui.UseLegacyUI() && webui.Available() && !webui.PreviousStartFailed() {
+			webui.IsAdmin = isAdmin
+			err := webui.Run()
+			if err == nil {
+				return
+			}
+			log.Printf("New interface failed, falling back to the classic one: %v", err)
+		}
 		ui.IsAdmin = isAdmin
 		ui.RunUI()
 		return
+	case "/connect", "/disconnect", "/toggle":
+		if len(os.Args) != 3 {
+			usage()
+		}
+		os.Exit(remoteCommand(strings.TrimPrefix(os.Args[1], "/"), os.Args[2]))
+	case "/disconnectall":
+		if len(os.Args) != 2 {
+			usage()
+		}
+		os.Exit(remoteCommand("disconnectall"))
 	case "/dumplog":
 		if len(os.Args) != 2 && len(os.Args) != 3 {
 			usage()

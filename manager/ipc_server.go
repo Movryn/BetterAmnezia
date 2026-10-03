@@ -19,6 +19,7 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 
+	"github.com/amnezia-vpn/amneziawg-windows-client/extras"
 	"github.com/amnezia-vpn/amneziawg-windows-client/updater"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
@@ -174,7 +175,14 @@ func (s *ManagerService) Delete(tunnelName string) error {
 	if err != nil {
 		return err
 	}
-	return conf.DeleteName(tunnelName)
+	err = conf.DeleteName(tunnelName)
+	if err != nil {
+		return err
+	}
+	if err := extras.DeleteTunnel(tunnelName); err != nil {
+		log.Printf("[%s] Unable to delete split tunneling rules: %v", tunnelName, err)
+	}
+	return nil
 }
 
 func (s *ManagerService) State(tunnelName string) (TunnelState, error) {
@@ -451,6 +459,29 @@ func (s *ManagerService) ServeConn(reader io.Reader, writer io.Writer) {
 			}
 		case UpdateMethodType:
 			s.Update()
+		case ExtMethodType:
+			var op string
+			err := decoder.Decode(&op)
+			if err != nil {
+				return
+			}
+			var payload []byte
+			err = decoder.Decode(&payload)
+			if err != nil {
+				return
+			}
+			resp, retErr := s.Ext(op, payload)
+			if resp == nil {
+				resp = []byte{}
+			}
+			err = encoder.Encode(resp)
+			if err != nil {
+				return
+			}
+			err = encoder.Encode(errToString(retErr))
+			if err != nil {
+				return
+			}
 		default:
 			return
 		}
@@ -521,6 +552,7 @@ func errToString(err error) string {
 
 func IPCServerNotifyTunnelChange(name string, state TunnelState, err error) {
 	notifyAll(TunnelChangeNotificationType, false, name, state, trackedTunnelsGlobalState(), errToString(err))
+	onTunnelStateChange(name, state)
 }
 
 func IPCServerNotifyTunnelsChange() {

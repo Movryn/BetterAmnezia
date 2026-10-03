@@ -14,12 +14,23 @@ import (
 )
 
 func DropAllPrivileges(retainDriverLoading bool) error {
-	var luid windows.LUID
 	if retainDriverLoading {
-		err := windows.LookupPrivilegeValue(nil, windows.StringToUTF16Ptr("SeLoadDriverPrivilege"), &luid)
+		return DropAllPrivilegesExcept("SeLoadDriverPrivilege")
+	}
+	return DropAllPrivilegesExcept()
+}
+
+// DropAllPrivilegesExcept removes every privilege from the process token
+// except the named ones.
+func DropAllPrivilegesExcept(keep ...string) error {
+	keepLUIDs := make([]windows.LUID, 0, len(keep))
+	for _, name := range keep {
+		var luid windows.LUID
+		err := windows.LookupPrivilegeValue(nil, windows.StringToUTF16Ptr(name), &luid)
 		if err != nil {
 			return err
 		}
+		keepLUIDs = append(keepLUIDs, luid)
 	}
 	var processToken windows.Token
 	err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_READ|windows.TOKEN_WRITE, &processToken)
@@ -45,7 +56,14 @@ func DropAllPrivileges(retainDriverLoading bool) error {
 	tokenPrivileges := (*windows.Tokenprivileges)(unsafe.Pointer(&buffer[0]))
 	for i := uint32(0); i < tokenPrivileges.PrivilegeCount; i++ {
 		item := (*windows.LUIDAndAttributes)(unsafe.Add(unsafe.Pointer(&tokenPrivileges.Privileges[0]), unsafe.Sizeof(tokenPrivileges.Privileges[0])*uintptr(i)))
-		if retainDriverLoading && item.Luid == luid {
+		kept := false
+		for _, luid := range keepLUIDs {
+			if item.Luid == luid {
+				kept = true
+				break
+			}
+		}
+		if kept {
 			continue
 		}
 		item.Attributes = windows.SE_PRIVILEGE_REMOVED

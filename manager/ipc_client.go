@@ -37,6 +37,7 @@ const (
 	ManagerStoppingNotificationType
 	UpdateFoundNotificationType
 	UpdateProgressNotificationType
+	ExtNotificationType
 )
 
 type MethodType int
@@ -55,6 +56,7 @@ const (
 	QuitMethodType
 	UpdateStateMethodType
 	UpdateMethodType
+	ExtMethodType
 )
 
 var (
@@ -182,6 +184,20 @@ func InitializeIPCClient(reader, writer, events *os.File) {
 				}
 				for cb := range updateProgressCallbacks {
 					cb.cb(dp)
+				}
+			case ExtNotificationType:
+				var event string
+				err = decoder.Decode(&event)
+				if err != nil {
+					continue
+				}
+				var payload []byte
+				err = decoder.Decode(&payload)
+				if err != nil {
+					continue
+				}
+				for cb := range extEventCallbacks {
+					cb.cb(event, payload)
 				}
 			}
 		}
