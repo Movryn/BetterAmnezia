@@ -190,7 +190,10 @@
   // ------------------------------------------------------------------
 
   const state = {
-    info: { version: "", isAdmin: true, updateState: 0 },
+    info: { version: "", isAdmin: true },
+    // Update status from the host: current, latest, available, checking,
+    // installing, downloaded, total, canInstall, error, url.
+    upd: null,
     prefs: { theme: "system", accent: "#7c5cff", language: "auto", closeToTray: true, startMinimized: true, notifications: true, compact: false, windowSize: "remember" },
     tunnels: [],
     loaded: false,
@@ -516,7 +519,7 @@
         title: t(p.label),
         onclick: () => navigate(p.id)
       }, icon(p.icon), h("span", null, t(p.label)),
-        p.id === "about" && state.info.updateState === 1 ? h("span", { class: "badge accent" }, "1") : null,
+        p.id === "settings" && state.upd && state.upd.available ? h("span", { class: "badge accent update-badge", title: t("Update available") }, "1") : null,
         p.id === "auto" && state.settings && state.settings.autoTunnel.enabled ? h("span", { class: "badge ok" }, "ON") : null)),
       h("div", { class: "sidebar-spacer" }),
       state.status.lockdown ? h("div", { class: "callout warn", style: { marginBottom: "8px", padding: "10px" } }, icon("lock"), h("span", null, t("Lockdown mode"))) : null,
@@ -1727,6 +1730,12 @@
           settingRow(t("Start hidden in the tray"), null, switchEl(!!p.startMinimized, v => setPrefs({ startMinimized: v }))),
           settingRow(t("Notifications"), t("Connections, errors, health restarts and auto-tunnel actions."), switchEl(!!p.notifications, v => setPrefs({ notifications: v })))),
 
+        h("div", { class: "section-title" }, t("Updates")),
+        h("div", { class: "card" },
+          settingRow(t("Check for updates on startup"), t("Looks for a new release on GitHub when BetterAmnezia starts."), switchEl(p.checkUpdates !== false, v => setPrefs({ checkUpdates: v }))),
+          p.checkUpdates !== false ? settingRow(t("Remind me about new versions"), t("Show a window asking whether to update when a new version is found."), switchEl(p.updatePrompt !== false, v => setPrefs({ updatePrompt: v })), { sub: true }) : null,
+          updateRows(false)),
+
         !s ? h("div", { class: "card", style: { marginTop: "16px", padding: "18px" } }, t("Loading…")) : [
           h("div", { class: "section-title" }, t("Kill switch")),
           h("div", { class: "card" },
@@ -1874,17 +1883,82 @@
   })();
 
   // ------------------------------------------------------------------
+  // Updates
+  // ------------------------------------------------------------------
+
+  function updateStatusText(u) {
+    if (!u) return "";
+    if (u.installing) return u.total ? t("Downloading the update… {0}%", Math.floor(100 * u.downloaded / u.total)) : t("Downloading the update…");
+    if (u.checking) return t("Checking for updates…");
+    if (u.error) return u.error;
+    if (u.available) return t("Version {0} is available.", u.latest);
+    if (u.latest) return t("You have the latest version.");
+    return t("Not checked yet.");
+  }
+
+  function installUpdate(u) {
+    if (!u.canInstall) {
+      call("shell.openURL", { url: u.url }).catch(toastError);
+      return;
+    }
+    call("update.install").then(() => toast("ok", t("Downloading the update…"), t("BetterAmnezia restarts when the installer is done."))).catch(toastError);
+  }
+
+  // updateRows is the status row with its buttons, shared by Settings and
+  // About.
+  function updateRows(compact) {
+    const u = state.upd;
+    const busy = u && (u.checking || u.installing);
+    const ro = !state.info.isAdmin;
+    const buttons = [];
+    if (u && u.available && u.url) buttons.push(h("button", { class: "btn small", onclick: () => call("shell.openURL", { url: u.url }).catch(toastError) }, icon("ext"), t("Release notes")));
+    if (u && u.available) buttons.push(h("button", { class: "btn primary small", disabled: busy || ro, onclick: () => installUpdate(u) }, icon("download"), u.canInstall ? t("Update now") : t("Download")));
+    if (!compact) buttons.push(h("button", { class: "btn small", disabled: busy, onclick: () => call("update.check").then(v => { state.upd = v; render(); }).catch(toastError) }, icon("refresh"), t("Check now")));
+    const bar = u && u.installing && u.total ? h("div", { class: "progress", style: { marginTop: "8px" } }, h("div", { style: { width: Math.floor(100 * u.downloaded / u.total) + "%" } })) : null;
+    return h("div", { class: "row" },
+      h("div", { class: "label" },
+        h("div", { class: "name" }, u && u.available ? t("Update available") : t("Version {0}", (u && u.current) || state.info.version || "")),
+        h("div", { class: "desc" + (u && u.error && !busy ? " bad-text" : "") }, updateStatusText(u)),
+        bar),
+      h("div", { class: "control" }, buttons));
+  }
+
+  let updateDialogOpen = false;
+  function updateDialog(u) {
+    if (updateDialogOpen) return;
+    updateDialogOpen = true;
+    let mute;
+    const m = modal({
+      title: t("Update available"),
+      body: h("div", { class: "vstack" },
+        h("p", { style: { margin: "4px 0 2px" } }, t("BetterAmnezia {0} is available. You have version {1}.", u.latest, u.current)),
+        h("p", { class: "muted", style: { margin: "0 0 6px" } }, u.canInstall
+          ? t("Update now to download and run the installer. Your tunnels and settings are kept.")
+          : t("This copy was not installed with the installer, so the new version opens in your browser.")),
+        h("label", { class: "hstack", style: { cursor: "pointer" } },
+          mute = h("input", { type: "checkbox" }),
+          h("span", null, t("Don't remind me again"))),
+        h("div", { class: "muted", style: { fontSize: "12px" } }, t("You can turn reminders back on in Settings."))),
+      foot: [
+        u.url ? h("button", { class: "btn ghost", onclick: () => call("shell.openURL", { url: u.url }).catch(toastError) }, t("Release notes")) : null,
+        h("div", { class: "spacer" }),
+        h("button", { class: "btn", onclick: () => m.close() }, t("Later")),
+        h("button", { class: "btn primary", autofocus: true, disabled: !state.info.isAdmin, onclick: () => { m.close(); installUpdate(u); } }, u.canInstall ? t("Update now") : t("Download"))
+      ],
+      onClose: () => {
+        updateDialogOpen = false;
+        if (mute.checked) setPrefs({ updatePrompt: false });
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------
   // About page
   // ------------------------------------------------------------------
 
   function aboutPage() {
-    const u = state.update;
-    const updateRow = state.info.updateState === 1 ?
-      h("div", { class: "callout", style: { marginTop: "16px" } }, icon("download"),
-        h("div", { class: "grow" }, h("b", null, t("Update available")),
-          u ? h("div", null, u.error ? u.error : u.activity + (u.total ? " · " + Math.round(100 * u.downloaded / u.total) + "%" : "")) : null),
-        h("button", { class: "btn primary small", disabled: !state.info.isAdmin || (u && !u.error && !u.complete), onclick: () => call("update.start").catch(toastError) }, t("Update now")))
-      : state.info.updateState === 2 ? h("div", { class: "muted", style: { marginTop: "12px" } }, t("Unofficial build — automatic updates are off.")) : null;
+    const u = state.upd;
+    const updateRow = u && u.available ? h("div", { class: "card", style: { marginTop: "16px" } }, updateRows(true)) : null;
     return [
       pageHeader(t("About")),
       h("div", { class: "page-body" },
@@ -1939,8 +2013,12 @@
   on("lockdown", d => { state.status.lockdown = !!(d && d.active); renderSidebar(); if (state.page === "settings") render(); });
   on("health", d => { if (d && d.tunnel) { state.status.health[d.tunnel] = d.status; if (state.page === "tunnels") renderDetail(); } });
   on("settings", s => { state.settings = s; if (["auto", "settings"].includes(state.page)) render(); else renderSidebar(); });
-  on("updateFound", d => { state.info.updateState = d.state; renderSidebar(); if (state.page === "about") render(); });
-  on("updateProgress", d => { state.update = d; if (state.page === "about") render(); });
+  on("update", u => {
+    state.upd = u;
+    renderSidebar();
+    if (state.page === "settings" || state.page === "about") render();
+    if (u.prompt) updateDialog(u);
+  });
   on("navigate", d => { if (d && d.action === "import") importDialog("file"); });
   on("systemTheme", () => applyPrefs());
   on("raised", () => { loadTunnels(); loadStatus().then(renderSidebar); });
@@ -1979,6 +2057,7 @@
     applyPrefs();
     render();
     try { state.info = await call("app.info"); } catch (e) { /* ignore */ }
+    call("update.status").then(u => { state.upd = u; renderSidebar(); }).catch(() => {});
     await Promise.all([loadTunnels(), loadStatus(), loadSettings()]);
     render();
     setInterval(pollRuntime, 1000);

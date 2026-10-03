@@ -24,7 +24,6 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows-client/manager"
 	"github.com/amnezia-vpn/amneziawg-windows-client/ringlogger"
 	"github.com/amnezia-vpn/amneziawg-windows-client/splittunnel"
-	"github.com/amnezia-vpn/amneziawg-windows-client/updater"
 	"github.com/amnezia-vpn/amneziawg-windows-client/version"
 )
 
@@ -46,10 +45,13 @@ type bridge struct {
 	callbacks []interface{ Unregister() }
 	stateMu   sync.Mutex
 	states    map[string]manager.TunnelState
+
+	updates *updates
 }
 
 func newBridge(w *window) *bridge {
 	b := &bridge{w: w, states: make(map[string]manager.TunnelState)}
+	b.updates = &updates{b: b}
 	b.handlers = map[string]handler{
 		"app.info":            b.appInfo,
 		"app.quit":            b.appQuit,
@@ -96,8 +98,9 @@ func newBridge(w *window) *bridge {
 		"clipboard.read":      b.clipboardRead,
 		"clipboard.write":     b.clipboardWrite,
 		"shell.openURL":       b.openURL,
-		"update.state":        b.updateState,
-		"update.start":        b.updateStart,
+		"update.status":       b.updateStatus,
+		"update.check":        b.updateCheck,
+		"update.install":      b.updateInstall,
 	}
 	return b
 }
@@ -210,16 +213,6 @@ func (b *bridge) subscribe() {
 		}),
 		manager.IPCClientRegisterTunnelsChange(func() { b.emit("tunnelsChange", nil) }),
 		manager.IPCClientRegisterManagerStopping(func() { b.w.dispatch(b.w.quit) }),
-		manager.IPCClientRegisterUpdateFound(func(s manager.UpdateState) {
-			b.emit("updateFound", map[string]any{"state": int(s)})
-		}),
-		manager.IPCClientRegisterUpdateProgress(func(dp updater.DownloadProgress) {
-			p := map[string]any{"activity": dp.Activity, "downloaded": dp.BytesDownloaded, "total": dp.BytesTotal, "complete": dp.Complete}
-			if dp.Error != nil {
-				p["error"] = dp.Error.Error()
-			}
-			b.emit("updateProgress", p)
-		}),
 		manager.IPCClientRegisterExtEvent(func(event string, payload []byte) {
 			var v any
 			json.Unmarshal(payload, &v)
@@ -290,6 +283,11 @@ func (w *window) notify(title, text string) {
 	if !loadPrefs().Notifications {
 		return
 	}
+	w.notifyAlways(title, text)
+}
+
+// notifyAlways shows a notification even when tunnel notifications are off.
+func (w *window) notifyAlways(title, text string) {
 	w.dispatch(func() {
 		if w.tray != nil {
 			w.tray.balloon(title, text)
@@ -298,14 +296,12 @@ func (w *window) notify(title, text string) {
 }
 
 func (b *bridge) appInfo(json.RawMessage) (any, error) {
-	updateState, _ := manager.IPCClientUpdateState()
 	return map[string]any{
-		"version":     version.Number,
-		"isAdmin":     IsAdmin,
-		"official":    version.IsRunningOfficialVersion(),
-		"updateState": int(updateState),
-		"arch":        version.Arch(),
-		"os":          version.OsName(),
+		"version":  version.Number,
+		"isAdmin":  IsAdmin,
+		"official": version.IsRunningOfficialVersion(),
+		"arch":     version.Arch(),
+		"os":       version.OsName(),
 	}, nil
 }
 
@@ -352,6 +348,7 @@ func (b *bridge) prefsSet(params json.RawMessage) (any, error) {
 	// The window rectangle is owned by the host, not the page.
 	current := loadPrefs()
 	p.Window, p.WindowMaximized = current.Window, current.WindowMaximized
+	p.IconVersion = current.IconVersion
 	if _, ok := sizePresets[p.WindowSize]; !ok && p.WindowSize != sizeMax {
 		p.WindowSize = sizeRemember
 	}
@@ -1045,16 +1042,4 @@ func (b *bridge) logSave(json.RawMessage) (any, error) {
 		return nil, err
 	}
 	return map[string]string{"path": path}, nil
-}
-
-func (b *bridge) updateState(json.RawMessage) (any, error) {
-	s, err := manager.IPCClientUpdateState()
-	return map[string]int{"state": int(s)}, err
-}
-
-func (b *bridge) updateStart(json.RawMessage) (any, error) {
-	if err := requireAdmin(); err != nil {
-		return nil, err
-	}
-	return nil, manager.IPCClientUpdate()
 }

@@ -906,6 +906,10 @@ a:hover { text-decoration: underline; }
 .modal-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border); align-items: center; }
 .modal-foot .spacer { flex: 1; }
 
+.progress { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; max-width: 320px; }
+.progress > div { height: 100%; background: var(--accent); transition: width .2s; }
+.bad-text { color: var(--bad) !important; }
+
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
 .tabs button {
   border: 0;
@@ -1052,6 +1056,8 @@ a:hover { text-decoration: underline; }
 @media (max-width: 960px) {
   :root { --sidebar: 68px; }
   .brand-text, .nav-item span, .status-card > div, .nav-item .badge { display: none; }
+  .nav-item { position: relative; }
+  .nav-item .badge.update-badge { display: block; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; padding: 0; font-size: 0; border-radius: 50%; background: var(--accent); }
   .brand { justify-content: center; padding-left: 0; padding-right: 0; }
   .nav-item { justify-content: center; padding: 10px; }
   .status-card { justify-content: center; padding: 12px 0; }
