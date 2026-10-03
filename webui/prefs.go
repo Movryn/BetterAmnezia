@@ -28,6 +28,10 @@ type Prefs struct {
 	Compact        bool   `json:"compact"`
 	// LastTunnel is the tunnel selected when the UI was last closed.
 	LastTunnel string `json:"lastTunnel,omitempty"`
+	// WindowSize is "remember", "25", "50", "75" or "max".
+	WindowSize      string      `json:"windowSize"`
+	Window          *WindowRect `json:"window,omitempty"`
+	WindowMaximized bool        `json:"windowMaximized,omitempty"`
 }
 
 func defaultPrefs() Prefs {
@@ -38,6 +42,7 @@ func defaultPrefs() Prefs {
 		CloseToTray:    true,
 		StartMinimized: true,
 		Notifications:  true,
+		WindowSize:     sizeRemember,
 	}
 }
 

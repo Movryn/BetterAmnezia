@@ -345,11 +345,23 @@ func (b *bridge) windowMinimize(json.RawMessage) (any, error) {
 
 func (b *bridge) prefsSet(params json.RawMessage) (any, error) {
 	p := loadPrefs()
+	oldSize := p.WindowSize
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, err
 	}
+	// The window rectangle is owned by the host, not the page.
+	current := loadPrefs()
+	p.Window, p.WindowMaximized = current.Window, current.WindowMaximized
+	if _, ok := sizePresets[p.WindowSize]; !ok && p.WindowSize != sizeMax {
+		p.WindowSize = sizeRemember
+	}
 	if err := savePrefs(p); err != nil {
 		return nil, err
+	}
+	// Resize after saving: the resize stores the new rectangle itself.
+	if p.WindowSize != oldSize {
+		size := p.WindowSize
+		b.w.dispatch(func() { b.w.applySizePreset(size) })
 	}
 	setLanguage(p.Language)
 	theme := p.effectiveTheme()

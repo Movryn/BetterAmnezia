@@ -23,7 +23,7 @@
     lockdown: { enabled: false, allowLan: true },
     remoteControl: false
   };
-  let prefs = { theme: params.get("theme") || "dark", accent: params.get("accent") || "#7c5cff", language: params.get("lang") || "en", closeToTray: true, startMinimized: true, notifications: true, compact: false };
+  let prefs = { theme: params.get("theme") || "dark", accent: params.get("accent") || "#7c5cff", language: params.get("lang") || "en", closeToTray: true, startMinimized: true, notifications: true, compact: false, windowSize: "remember" };
   let rx = 120e6, tx = 9e6;
   let logs = [];
   let cursor = 0;

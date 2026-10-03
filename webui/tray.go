@@ -37,6 +37,8 @@ type tray struct {
 	icons   map[int]win.HICON
 	added   bool
 	tunnels []string
+
+	balloonIcon win.HICON
 }
 
 func loadIcon(id int) win.HICON {
@@ -51,6 +53,8 @@ func newTray(w *window) (*tray, error) {
 	if t.icons[iconConnected] == 0 {
 		t.icons[iconConnected] = t.icons[iconDisconnected]
 	}
+	big := win.GetSystemMetrics(win.SM_CXICON)
+	t.balloonIcon = win.HICON(win.LoadImage(win.GetModuleHandle(nil), win.MAKEINTRESOURCE(iconDisconnected), win.IMAGE_ICON, big, big, win.LR_SHARED))
 	t.nid.CbSize = uint32(unsafe.Sizeof(t.nid))
 	t.nid.HWnd = w.hwnd
 	t.nid.UID = trayID
@@ -116,7 +120,13 @@ func (t *tray) setState(globalState manager.TunnelState, active []string) {
 func (t *tray) balloon(title, text string) {
 	nid := t.nid
 	nid.UFlags = win.NIF_INFO
-	nid.DwInfoFlags = win.NIIF_INFO | win.NIIF_LARGE_ICON
+	// Show the app icon rather than the generic info icon.
+	if t.balloonIcon != 0 {
+		nid.DwInfoFlags = win.NIIF_USER | win.NIIF_LARGE_ICON
+		nid.HBalloonIcon = t.balloonIcon
+	} else {
+		nid.DwInfoFlags = win.NIIF_INFO
+	}
 	ti := windows.StringToUTF16(title)
 	if len(ti) > len(nid.SzInfoTitle) {
 		ti = append(ti[:len(nid.SzInfoTitle)-1], 0)

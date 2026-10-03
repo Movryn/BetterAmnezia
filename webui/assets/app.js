@@ -37,6 +37,9 @@
     }
   }
 
+  // The app icon; the host inlines it as a data URL.
+  const LOGO = window.__LOGO || "../assets/logo.png";
+
   const ICONS = {
     shield: '<path d="M12 3l7 3v6c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
     logo: '<path d="M12 2.8l7.6 3.2v5.8c0 4.9-3.2 9-7.6 10.2-4.4-1.2-7.6-5.3-7.6-10.2V6z"/><path d="M8.3 15.6L12 7.4l3.7 8.2M9.6 12.8h4.8"/>',
@@ -188,7 +191,7 @@
 
   const state = {
     info: { version: "", isAdmin: true, updateState: 0 },
-    prefs: { theme: "system", accent: "#7c5cff", language: "auto", closeToTray: true, startMinimized: true, notifications: true, compact: false },
+    prefs: { theme: "system", accent: "#7c5cff", language: "auto", closeToTray: true, startMinimized: true, notifications: true, compact: false, windowSize: "remember" },
     tunnels: [],
     loaded: false,
     selected: null,
@@ -506,7 +509,7 @@
     }
     append(side, [
       h("div", { class: "brand" },
-        h("div", { class: "brand-mark" }, icon("logo")),
+        h("img", { class: "brand-logo", src: LOGO, alt: "" }),
         h("div", { class: "brand-text" }, h("div", { class: "brand-name" }, "BetterAmnezia"), h("div", { class: "brand-sub" }, "v" + (state.info.version || "") + " · AmneziaWG"))),
       PAGES.map(p => h("button", {
         class: "nav-item" + (state.page === p.id ? " active" : ""),
@@ -1710,7 +1713,13 @@
             ACCENTS.map(c => h("button", { class: "swatch" + (p.accent === c ? " active" : ""), style: { background: c }, title: c, onclick: () => setPrefs({ accent: c }) })),
             h("label", { class: "swatch custom" + (ACCENTS.includes(p.accent) ? "" : " active"), title: "Custom" }, h("input", { type: "color", value: p.accent, onchange: e => setPrefs({ accent: e.target.value }) })))),
           settingRow(t("Language"), null, selectEl(p.language || "auto", [{ value: "auto", label: t("Automatic") }, { value: "en", label: "English" }, { value: "ru", label: "Русский" }], v => setPrefs({ language: v }))),
-          settingRow(t("Compact layout"), null, switchEl(!!p.compact, v => setPrefs({ compact: v })))),
+          settingRow(t("Compact layout"), null, switchEl(!!p.compact, v => setPrefs({ compact: v }))),
+          settingRow(t("Window size"), t("Size of the window when the app opens."), selectEl(p.windowSize || "remember", [
+            { value: "remember", label: t("Remember last size") },
+            { value: "25", label: t("{0} of the screen", "25%") },
+            { value: "50", label: t("{0} of the screen", "50%") },
+            { value: "75", label: t("{0} of the screen", "75%") },
+            { value: "max", label: t("Maximised") }], v => setPrefs({ windowSize: v })))),
 
         h("div", { class: "section-title" }, t("Behaviour")),
         h("div", { class: "card" },
@@ -1880,7 +1889,7 @@
       pageHeader(t("About")),
       h("div", { class: "page-body" },
         h("div", { class: "card", style: { padding: "28px", display: "flex", gap: "22px", alignItems: "center" } },
-          h("div", { class: "brand-mark", style: { width: "72px", height: "72px", borderRadius: "20px" } }, h("span", { style: { display: "contents" }, ref: el => { const s = icon("logo"); s.style.width = "40px"; s.style.height = "40px"; el.appendChild(s); } })),
+          h("img", { class: "brand-logo", src: LOGO, alt: "", style: { width: "72px", height: "72px" } }),
           h("div", null,
             h("div", { style: { font: "600 26px/1.2 var(--font-display)" } }, "BetterAmnezia"),
             h("div", { class: "muted" }, t("A better AmneziaWG client for Windows.")),
