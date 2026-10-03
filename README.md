@@ -25,6 +25,7 @@ A better [AmneziaWG](https://amnezia.org/) client for Windows. It keeps the soli
 - Auto-tunneling: connect or disconnect depending on the network: trusted Wi-Fi networks, untrusted Wi-Fi, Ethernet, other networks, and per-SSID rules with wildcards.
 - Health monitor: restarts a tunnel that keeps sending without receiving anything or completing a handshake, optionally also based on pings through the tunnel.
 - Dynamic DNS: re-resolves endpoint host names and moves running tunnels to the new address without reconnecting.
+- Deferred endpoint bootstrapping: when an endpoint host name cannot be resolved at connect time (no network yet, DNS blocked), the tunnel still comes up and the endpoint is filled in as soon as it resolves.
 - Lockdown mode: blocks all traffic while no tunnel is connected, optionally allowing the LAN.
 - Remote control for scripts and automation tools, without elevation (enable it under Settings → Remote control):
 

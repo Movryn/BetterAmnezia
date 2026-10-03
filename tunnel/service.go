@@ -152,11 +152,12 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	}
 
 	log.Println("Resolving DNS names")
-	uapiConf, err := config.ToUAPI()
+	uapiConf, deferred, err := uapiWithDeferredEndpoints(config)
 	if err != nil {
 		serviceError = services.ErrorDNSLookup
 		return
 	}
+	defer deferred.close()
 
 	log.Println("Creating Wintun interface")
 	var wintun tun.Device
@@ -233,6 +234,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	}
 
 	watcher.Configure(bind.(conn.BindSocketToInterface), config, nativeTun)
+	deferred.run(dev, winipcfg.LUID(nativeTun.LUID()))
 
 	log.Println("Listening for UAPI requests")
 	go func() {

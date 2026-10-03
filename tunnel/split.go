@@ -410,12 +410,18 @@ func (s *splitRuntime) tunnelDialer() splittunnel.DialFunc {
 // physicalDialer sends through the regular network by pinning the socket to
 // the interface that carries the best non-tunnel default route.
 func (s *splitRuntime) physicalDialer() splittunnel.DialFunc {
+	return physicalDial(func() winipcfg.LUID { return s.luid })
+}
+
+// physicalDial returns a dial function that bypasses the tunnel whose LUID
+// ourLUID returns (zero before the adapter exists).
+func physicalDial(ourLUID func() winipcfg.LUID) splittunnel.DialFunc {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		d := &net.Dialer{Timeout: 10 * time.Second}
 		ap, err := netip.ParseAddrPort(address)
 		if err == nil {
 			family := familyOf(ap.Addr().Unmap())
-			if gw, ok := bestPhysicalDefault(family, s.luid); ok {
+			if gw, ok := bestPhysicalDefault(family, ourLUID()); ok {
 				index := gw.index
 				d.Control = func(network, address string, c syscall.RawConn) error {
 					var serr error
