@@ -72,7 +72,23 @@ type window struct {
 
 	taskbarCreated uint32
 	quitting       bool
+	startMaximized bool
+	inSizeMove     bool
+	webviewOff     bool
 }
+
+// Minimum window size in DIPs; the page adapts down to this.
+const (
+	minWidth  = 640
+	minHeight = 480
+)
+
+// WM_SIZE wParam values.
+const (
+	sizeRestored  = 0
+	sizeMinimized = 1
+	sizeMaximized = 2
+)
 
 // minRuntimeMajor is the oldest WebView2 runtime the page is written for
 // (CSS color-mix and container queries).
@@ -193,7 +209,10 @@ func (w *window) setCaptionColor(rgb uint32, set bool) {
 }
 
 func (w *window) show() {
-	if win.IsIconic(w.hwnd) {
+	if w.startMaximized {
+		w.startMaximized = false
+		win.ShowWindow(w.hwnd, win.SW_SHOWMAXIMIZED)
+	} else if win.IsIconic(w.hwnd) {
 		win.ShowWindow(w.hwnd, win.SW_RESTORE)
 	} else {
 		win.ShowWindow(w.hwnd, win.SW_SHOW)
@@ -201,13 +220,63 @@ func (w *window) show() {
 	win.SetWindowPos(w.hwnd, win.HWND_TOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_SHOWWINDOW)
 	win.SetWindowPos(w.hwnd, win.HWND_NOTOPMOST, 0, 0, 0, 0, win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_SHOWWINDOW)
 	win.SetForegroundWindow(w.hwnd)
-	if w.chromium != nil && w.ready {
-		w.chromium.Focus()
-	}
+	w.webviewVisible(true)
+	w.focusWebView()
 }
 
 func (w *window) hide() {
+	w.saveWindowState()
 	win.ShowWindow(w.hwnd, win.SW_HIDE)
+	w.webviewVisible(false)
+}
+
+// The go-webview2 wrappers call os.Exit on any failed COM call, and some
+// calls legitimately fail while the window is minimised or hidden (focus,
+// bounds). These helpers talk to the controller directly and only log.
+
+// webviewVisible shows or hides the WebView and, when showing, refits it to
+// the client area, so a window restored from the tray or the taskbar never
+// comes back black.
+func (w *window) webviewVisible(visible bool) {
+	if w.chromium == nil || !w.ready {
+		return
+	}
+	c := w.chromium.GetController()
+	if c == nil {
+		return
+	}
+	if err := c.PutIsVisible(visible); err != nil {
+		log.Printf("WebView2 visibility: %v", err)
+	}
+	w.webviewOff = !visible
+	if visible {
+		w.resizeWebView()
+		c.NotifyParentWindowPositionChanged()
+	}
+}
+
+// resizeWebView fits the WebView to the client area unless the window is
+// minimised (empty client rectangle).
+func (w *window) resizeWebView() {
+	if w.chromium == nil || !w.ready || win.IsIconic(w.hwnd) {
+		return
+	}
+	var r win.RECT
+	if !win.GetClientRect(w.hwnd, &r) || r.Right <= r.Left || r.Bottom <= r.Top {
+		return
+	}
+	w.chromium.Resize()
+}
+
+func (w *window) focusWebView() {
+	if w.chromium == nil || !w.ready || win.IsIconic(w.hwnd) || !win.IsWindowVisible(w.hwnd) {
+		return
+	}
+	if c := w.chromium.GetController(); c != nil {
+		if err := c.MoveFocus(edge.COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC); err != nil {
+			log.Printf("WebView2 focus: %v", err)
+		}
+	}
 }
 
 func (w *window) quit() {
@@ -215,6 +284,7 @@ func (w *window) quit() {
 		return
 	}
 	w.quitting = true
+	w.saveWindowState()
 	if w.tray != nil {
 		w.tray.dispose()
 	}
@@ -247,22 +317,39 @@ func (w *window) wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 		w.bridge.emit("raised", nil)
 		return 0
 	case win.WM_SIZE:
-		if w.chromium != nil && w.ready {
-			w.chromium.Resize()
+		switch wParam {
+		case sizeMinimized:
+			w.webviewVisible(false)
+		case sizeRestored, sizeMaximized:
+			if w.webviewOff && win.IsWindowVisible(hwnd) {
+				w.webviewVisible(true)
+			} else {
+				w.resizeWebView()
+			}
+		}
+		// Maximising and restoring do not go through a move/size loop.
+		if !w.inSizeMove && (wParam == sizeMaximized || wParam == sizeRestored) {
+			w.saveWindowState()
 		}
 		return 0
+	case win.WM_ENTERSIZEMOVE:
+		w.inSizeMove = true
+	case win.WM_EXITSIZEMOVE:
+		w.inSizeMove = false
+		w.saveWindowState()
 	case win.WM_MOVE, win.WM_MOVING:
 		if w.chromium != nil && w.ready {
 			w.chromium.NotifyParentWindowPositionChanged()
 		}
 	case win.WM_ACTIVATE:
-		if win.LOWORD(uint32(wParam)) != win.WA_INACTIVE && w.chromium != nil && w.ready {
-			w.chromium.Focus()
+		// HIWORD is non-zero while the window is still minimised.
+		if win.LOWORD(uint32(wParam)) != win.WA_INACTIVE && win.HIWORD(uint32(wParam)) == 0 {
+			w.focusWebView()
 		}
 	case win.WM_GETMINMAXINFO:
 		mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
-		mmi.PtMinTrackSize.X = scale(hwnd, 760)
-		mmi.PtMinTrackSize.Y = scale(hwnd, 540)
+		mmi.PtMinTrackSize.X = scale(hwnd, minWidth)
+		mmi.PtMinTrackSize.Y = scale(hwnd, minHeight)
 		return 0
 	case win.WM_DPICHANGED:
 		r := (*win.RECT)(unsafe.Pointer(lParam))
@@ -398,18 +485,7 @@ func (w *window) create() error {
 	if w.hwnd == 0 {
 		return fmt.Errorf("unable to create window: %v", windows.GetLastError())
 	}
-	// Size for the monitor's DPI and centre on it.
-	width, height := scale(w.hwnd, 1080), scale(w.hwnd, 720)
-	var mi win.MONITORINFO
-	mi.CbSize = uint32(unsafe.Sizeof(mi))
-	if win.GetMonitorInfo(win.MonitorFromWindow(w.hwnd, win.MONITOR_DEFAULTTONEAREST), &mi) {
-		wa := mi.RcWork
-		width = min(width, wa.Right-wa.Left)
-		height = min(height, wa.Bottom-wa.Top)
-		x := wa.Left + (wa.Right-wa.Left-width)/2
-		y := wa.Top + (wa.Bottom-wa.Top-height)/2
-		win.SetWindowPos(w.hwnd, 0, x, y, width, height, win.SWP_NOZORDER|win.SWP_NOACTIVATE)
-	}
+	w.startMaximized = w.initialPlacement()
 	// The UI is elevated; let the non-elevated launcher talk to it.
 	win.ChangeWindowMessageFilterEx(w.hwnd, RaiseMsg, win.MSGFLT_ALLOW, nil)
 	win.ChangeWindowMessageFilterEx(w.hwnd, win.WM_COPYDATA, win.MSGFLT_ALLOW, nil)

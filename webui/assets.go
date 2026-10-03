@@ -7,10 +7,11 @@ package webui
 
 import (
 	"embed"
+	"encoding/base64"
 	"strings"
 )
 
-//go:embed assets/index.html assets/app.css assets/i18n.js assets/app.js
+//go:embed assets/index.html assets/app.css assets/i18n.js assets/app.js assets/logo.png
 var assets embed.FS
 
 func asset(name string) string {
@@ -26,7 +27,8 @@ func asset(name string) string {
 func pageHTML() string {
 	html := asset("index.html")
 	html = strings.Replace(html, `<link rel="stylesheet" href="app.css">`, "<style>"+asset("app.css")+"</style>", 1)
-	html = strings.Replace(html, `<script src="i18n.js"></script>`, "<script>"+asset("i18n.js")+"</script>", 1)
+	logo := "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(asset("logo.png")))
+	html = strings.Replace(html, `<script src="i18n.js"></script>`, `<script>window.__LOGO="`+logo+`";</script><script>`+asset("i18n.js")+"</script>", 1)
 	html = strings.Replace(html, `<script src="app.js"></script>`, "<script>"+asset("app.js")+"</script>", 1)
 	return html
 }
