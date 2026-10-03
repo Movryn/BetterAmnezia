@@ -39,12 +39,17 @@ var nativeRU = map[string]string{
 	"Programs":                       "Программы",
 	"Choose applications":            "Выберите приложения",
 	"Choose the split tunnel driver": "Выберите драйвер раздельного туннелирования",
-	"Choose a folder; every program inside it will follow the rule.":   "Выберите папку: правило применится ко всем программам внутри неё.",
-	"Restarting unhealthy tunnel: ":                                    "Перезапуск неисправного туннеля: ",
-	"This action requires administrator rights.":                       "Для этого действия нужны права администратора.",
-	"A tunnel named %s already exists.":                                "Туннель с именем %s уже существует.",
-	"Invalid name: use up to 32 letters, digits and _=+.- characters.": "Недопустимое имя: до 32 латинских букв, цифр и символов _=+.-",
-	"The configuration is too large for a QR code: %v":                 "Конфигурация слишком велика для QR-кода: %v",
+	"Choose a folder; every program inside it will follow the rule.":                                  "Выберите папку: правило применится ко всем программам внутри неё.",
+	"Restarting unhealthy tunnel: ":                                                                   "Перезапуск неисправного туннеля: ",
+	"This action requires administrator rights.":                                                      "Для этого действия нужны права администратора.",
+	"A tunnel named %s already exists.":                                                               "Туннель с именем %s уже существует.",
+	"Invalid name: use up to 32 letters, digits and _=+.- characters.":                                "Недопустимое имя: до 32 латинских букв, цифр и символов _=+.-",
+	"The configuration is too large for a QR code: %v":                                                "Конфигурация слишком велика для QR-кода: %v",
+	"A new version is available. Click to see what's new.":                                            "Доступна новая версия. Нажмите, чтобы узнать подробности.",
+	"This copy was not installed with the installer. Download the new version from the release page.": "Эта копия установлена без установщика. Скачайте новую версию на странице релиза.",
+	"The update is already being downloaded.":                                                         "Обновление уже загружается.",
+	"No update is available.":                                                                         "Обновлений нет.",
+	"The release has no installer for this computer.":                                                 "В релизе нет установщика для этого компьютера.",
 }
 
 var (

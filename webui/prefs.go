@@ -32,6 +32,12 @@ type Prefs struct {
 	WindowSize      string      `json:"windowSize"`
 	Window          *WindowRect `json:"window,omitempty"`
 	WindowMaximized bool        `json:"windowMaximized,omitempty"`
+	// CheckUpdates looks for a new release at start-up; UpdatePrompt shows
+	// a dialog when one is found ("Don't remind me again" clears it).
+	CheckUpdates bool `json:"checkUpdates"`
+	UpdatePrompt bool `json:"updatePrompt"`
+	// IconVersion is the version whose icons Explorer was last told about.
+	IconVersion string `json:"iconVersion,omitempty"`
 }
 
 func defaultPrefs() Prefs {
@@ -43,6 +49,8 @@ func defaultPrefs() Prefs {
 		StartMinimized: true,
 		Notifications:  true,
 		WindowSize:     sizeRemember,
+		CheckUpdates:   true,
+		UpdatePrompt:   true,
 	}
 }
 

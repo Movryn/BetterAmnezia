@@ -60,6 +60,9 @@ func installRoot() (string, error) {
 	return filepath.Join(pf, ProductName), nil
 }
 
+// InstallDirectory is where the installer puts BetterAmnezia.
+func InstallDirectory() (string, error) { return installRoot() }
+
 // UseOwnDataDirectory points the configuration store, the log and the
 // extras at %ProgramFiles%\BetterAmnezia\Data instead of the official
 // client's folder. Processes running as SYSTEM create the directory with a

@@ -224,6 +224,10 @@ func (w *window) show() {
 	w.focusWebView()
 }
 
+func (w *window) visible() bool {
+	return w.hwnd != 0 && win.IsWindowVisible(w.hwnd) && !win.IsIconic(w.hwnd)
+}
+
 func (w *window) hide() {
 	w.saveWindowState()
 	win.ShowWindow(w.hwnd, win.SW_HIDE)
@@ -486,6 +490,7 @@ func (w *window) create() error {
 		return fmt.Errorf("unable to create window: %v", windows.GetLastError())
 	}
 	w.startMaximized = w.initialPlacement()
+	w.setWindowIcons()
 	// The UI is elevated; let the non-elevated launcher talk to it.
 	win.ChangeWindowMessageFilterEx(w.hwnd, RaiseMsg, win.MSGFLT_ALLOW, nil)
 	win.ChangeWindowMessageFilterEx(w.hwnd, win.WM_COPYDATA, win.MSGFLT_ALLOW, nil)
@@ -618,6 +623,8 @@ func Run() (err error) {
 	os.Remove(marker)
 
 	w.bridge.subscribe()
+	w.bridge.updates.startupCheck()
+	refreshShellIconsOnce()
 
 	var msg win.MSG
 	for win.GetMessage(&msg, 0, 0, 0) > 0 {

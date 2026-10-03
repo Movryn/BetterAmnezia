@@ -27,7 +27,7 @@ const (
 	menuDisconnect   = 4
 	menuTunnelOffset = 100
 
-	iconDisconnected = 7
+	iconDisconnected = iconApp
 	iconConnected    = 9
 )
 
