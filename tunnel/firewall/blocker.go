@@ -26,7 +26,7 @@ type baseObjects struct {
 var wfpSession uintptr
 
 func createWfpSession() (uintptr, error) {
-	sessionDisplayData, err := createWtFwpmDisplayData0("AmneziaWG", "AmneziaWG dynamic session")
+	sessionDisplayData, err := createWtFwpmDisplayData0("BetterAmnezia", "BetterAmnezia dynamic session")
 	if err != nil {
 		return 0, wrapErr(err)
 	}

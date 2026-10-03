@@ -157,7 +157,7 @@
     "Enabled": "Включено",
     "Remove": "Удалить",
     "Bypass needs the split tunnel driver": "Для обхода нужен драйвер раздельного туннелирования",
-    "Windows cannot route a single app around a VPN without a kernel driver. Place mullvad-split-tunnel.sys next to amneziawg.exe or pick it in Settings → Split tunnel driver. Without it, bypass rules are ignored; “VPN only” and “Block” always work.": "Windows не умеет направлять отдельное приложение в обход VPN без драйвера ядра. Положите mullvad-split-tunnel.sys рядом с amneziawg.exe или выберите его в Настройки → Драйвер раздельного туннелирования. Без него правила обхода игнорируются; «Только через VPN» и «Блокировать» работают всегда.",
+    "Windows cannot route a single app around a VPN without a kernel driver. Place mullvad-split-tunnel.sys next to betteramnezia.exe or pick it in Settings → Split tunnel driver. Without it, bypass rules are ignored; “VPN only” and “Block” always work.": "Windows не умеет направлять отдельное приложение в обход VPN без драйвера ядра. Положите mullvad-split-tunnel.sys рядом с betteramnezia.exe или выберите его в Настройки → Драйвер раздельного туннелирования. Без него правила обхода игнорируются; «Только через VPN» и «Блокировать» работают всегда.",
     "IP addresses and ranges": "IP-адреса и диапазоны",
     "Single addresses or CIDR ranges, IPv4 or IPv6.": "Отдельные адреса или диапазоны CIDR, IPv4 или IPv6.",
     "e.g. 192.168.1.0/24, 1.1.1.1, 2001:db8::/32": "например 192.168.1.0/24, 1.1.1.1, 2001:db8::/32",

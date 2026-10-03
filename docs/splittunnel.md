@@ -2,7 +2,7 @@
 
 Split tunneling decides which traffic uses a tunnel. Rules are stored per tunnel and are applied by the tunnel service when the tunnel connects. Saving new rules for a connected tunnel reconnects it.
 
-Rules live in `%ProgramFiles%\AmneziaWG\Data\Extras\<tunnel>.split.json`, which only SYSTEM and Administrators can read. The file is JSON and can be edited by hand while the tunnel is stopped:
+Rules live in `%ProgramFiles%\BetterAmnezia\Data\Extras\<tunnel>.split.json`, which only SYSTEM and Administrators can read. The file is JSON and can be edited by hand while the tunnel is stopped:
 
 ```json
 {
@@ -82,9 +82,9 @@ A rule with `"folder": true` applies to every `.exe` inside the folder and its s
 Windows routes by destination, not by program. Keeping a single application out of a VPN requires a kernel driver that redirects that program's sockets. BetterAmnezia uses the open source [Mullvad split tunnel driver](https://github.com/mullvad/win-split-tunnel) (dual licensed GPL-3.0-or-later / MPL-2.0). It is **not** bundled. To enable `bypass` rules:
 
 1. Obtain a signed `mullvad-split-tunnel.sys` that matches your architecture (x64 or ARM64). The Mullvad VPN app ships one in its installation directory.
-2. Put it next to `amneziawg.exe`, or choose it under *Settings → Split tunnel driver*.
+2. Put it next to `betteramnezia.exe`, or choose it under *Settings → Split tunnel driver*.
 
-The tunnel service installs it as the kernel service `AmneziaWGSplitTunnel` when a tunnel with bypass rules connects, registers the process tree and the tunnel/internet addresses, and resets it when the tunnel disconnects. Driver versions 1.3 and later place their filters in the tunnel's own WFP sublayer, so bypassed apps also pass the kill switch; older drivers work only for tunnels without the kill switch. Do not use it while the Mullvad VPN app itself is running.
+The tunnel service installs it as the kernel service `BetterAmneziaSplitTunnel` when a tunnel with bypass rules connects, registers the process tree and the tunnel/internet addresses, and resets it when the tunnel disconnects. Driver versions 1.3 and later place their filters in the tunnel's own WFP sublayer, so bypassed apps also pass the kill switch; older drivers work only for tunnels without the kill switch. Do not use it while the Mullvad VPN app itself is running.
 
 Without the driver, `bypass` rules are logged and ignored; the UI shows a warning.
 

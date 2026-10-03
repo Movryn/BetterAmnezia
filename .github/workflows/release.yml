@@ -1,0 +1,54 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish, e.g. v1.0.0 (must exist)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: build programs
+        shell: cmd
+        run: build.bat
+
+      - name: build installers
+        shell: cmd
+        run: installer\build.bat
+
+      - name: package
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path version\version.go -Pattern 'Number\s*=\s*"([0-9.]+)"').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force dist | Out-Null
+          foreach ($arch in "amd64", "x86", "arm64") {
+            $stage = "stage\BetterAmnezia-$version-$arch"
+            New-Item -ItemType Directory -Force $stage | Out-Null
+            Copy-Item "$arch\betteramnezia.exe", "$arch\wintun.dll", README.md, COPYING $stage
+            Compress-Archive -Path "$stage\*" -DestinationPath "dist\BetterAmnezia-$version-$arch-portable.zip"
+          }
+          Copy-Item installer\dist\*.msi dist\
+          Get-ChildItem dist | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content dist\SHA256SUMS.txt
+          Get-ChildItem dist
+
+      - name: publish
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: BetterAmnezia ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: .github/release-notes.md
+          files: dist/*

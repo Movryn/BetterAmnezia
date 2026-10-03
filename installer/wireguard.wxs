@@ -11,13 +11,13 @@
 	<?define PlatformProgramFilesFolder = "ProgramFilesFolder"?>
 <?endif?>
 <?if $(var.WIREGUARD_PLATFORM) = "amd64"?>
-	<?define UpgradeCode = "876b57e4-4490-4442-a983-721ee141b00d"?>
+	<?define UpgradeCode = "fbc70e9e-9657-472e-ad7b-01695aadc44a"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "x86"?>
-	<?define UpgradeCode = "945200da-4a7e-4b02-a06f-00fcd09e48da"?>
+	<?define UpgradeCode = "8a3c0d08-9707-4650-bfad-086332621ebd"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "arm"?>
-	<?define UpgradeCode = "220a4807-8e24-4594-9880-92034e062a57"?>
+	<?define UpgradeCode = "ca71bb4e-0a27-4453-928c-e8b8a883a42c"?>
 <?elseif $(var.WIREGUARD_PLATFORM) = "arm64"?>
-	<?define UpgradeCode = "940bb00d-6a17-409c-93c6-0347e2dfed80"?>
+	<?define UpgradeCode = "ee2fd535-142b-4b8a-857c-ac8e8dd7517c"?>
 <?else?>
 	<?error Unknown platform ?>
 <?endif?>
@@ -25,16 +25,16 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product
 		Id="*"
-		Name="AmneziaWG"
+		Name="BetterAmnezia"
 		Language="1033"
 		Version="$(var.WIREGUARD_VERSION)"
-		Manufacturer="Amnezia"
+		Manufacturer="BetterAmnezia"
 		UpgradeCode="$(var.UpgradeCode)">
 		<Package
 			InstallerVersion="500"
 			Compressed="yes"
 			InstallScope="perMachine"
-			Description="AmneziaWG: Fast, Modern, Secure VPN Tunnel"
+			Description="BetterAmnezia: AmneziaWG client with split tunneling"
 			ReadOnly="yes" />
 
 		<MediaTemplate EmbedCab="yes" CompressionLevel="high" />
@@ -43,7 +43,7 @@
 		<Binary Id="customactions.dll" SourceFile="$(var.WIREGUARD_PLATFORM)\customactions.dll" />
 
 		<Property Id="ARPPRODUCTICON" Value="wireguard.ico" />
-		<Property Id="ARPURLINFOABOUT" Value="https://amnezia.org/" />
+		<Property Id="ARPURLINFOABOUT" Value="https://github.com/Movryn/betteramnezia" />
 		<Property Id="ARPNOMODIFY" Value="yes" />
 		<Property Id="DISABLEADVTSHORTCUTS" Value="yes" />
 		<Property Id="DISABLEROLLBACK" Value="yes" />
@@ -65,7 +65,7 @@
 		-->
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="$(var.PlatformProgramFilesFolder)">
-				<Directory Id="WireGuardFolder" Name="AmneziaWG" />
+				<Directory Id="WireGuardFolder" Name="BetterAmnezia" />
 			</Directory>
 			<Directory Id="ProgramMenuFolder" />
 		</Directory>
@@ -74,17 +74,15 @@
 			Components
 		-->
 		<ComponentGroup Id="WireGuardComponents">
-			<Component Directory="WireGuardFolder" Id="WireGuardExecutable" Guid="c3508d23-3362-47ce-9220-321bdb1a1acc">
-				<File Source="..\$(var.WIREGUARD_PLATFORM)\amneziawg.exe" KeyPath="yes">
-					<Shortcut Id="WireGuardStartMenuShortcut" Directory="ProgramMenuFolder" Name="AmneziaWG" Description="AmneziaWG: Fast, Modern, Secure VPN Tunnel" WorkingDirectory="WireGuardFolder" Advertise="yes" />
+			<Component Directory="WireGuardFolder" Id="WireGuardExecutable" Guid="86fe67eb-0444-4e6c-a136-53100bd011b3">
+				<File Source="..\$(var.WIREGUARD_PLATFORM)\betteramnezia.exe" KeyPath="yes">
+					<Shortcut Id="WireGuardStartMenuShortcut" Directory="ProgramMenuFolder" Name="BetterAmnezia" Description="BetterAmnezia: AmneziaWG client with split tunneling" WorkingDirectory="WireGuardFolder" Advertise="yes" />
 				</File>
 				<ServiceControl Id="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" Name="DummyService.3AA0C492_29F4_4342_B608_DB95B2DECB13" /><!-- A dummy to make WiX create ServiceControl table for us. -->
 			</Component>
-			<Component Directory="WireGuardFolder" Id="WgExecutable" Guid="540cf446-fcc3-4452-b9fb-eb4c02780251">
-				<File Source="..\$(var.WIREGUARD_PLATFORM)\awg.exe" KeyPath="yes" />
-				<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[WireGuardFolder]" />
-			</Component>
-			<Component Directory="WireGuardFolder" Id="WintunLibrary" Guid="ac88e408-9b78-4eb3-9d2a-99305f2e5a51">
+			<!-- awg.exe is not shipped: it talks to the official client's pipes, and
+			     adding it to PATH would shadow the official client's copy. -->
+			<Component Directory="WireGuardFolder" Id="WintunLibrary" Guid="08fda546-b4ea-4a9d-a4d9-73c19b52bad8">
 				<File Source="..\$(var.WIREGUARD_PLATFORM)\wintun.dll" KeyPath="yes" />
 			</Component>
 		</ComponentGroup>
@@ -113,7 +111,7 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Launch amneziawg.exe on product reconfiguration (starting same MSI again)
+			Launch betteramnezia.exe on product reconfiguration (starting same MSI again)
 		-->
 		<CustomAction Id="LaunchApplicationAndAbort" BinaryKey="customactions.dll" DllEntry="LaunchApplicationAndAbort" />
 		<InstallExecuteSequence>
@@ -153,9 +151,9 @@
 		</InstallExecuteSequence>
 
 		<!--
-			Launch amneziawg.exe after setup complete
+			Launch betteramnezia.exe after setup complete
 		-->
-		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="amneziawg.exe" ExeCommand="" Return="asyncNoWait" />
+		<CustomAction Id="LaunchApplication" HideTarget="yes" Impersonate="no" Execute="deferred" FileKey="betteramnezia.exe" ExeCommand="" Return="asyncNoWait" />
 		<InstallExecuteSequence>
 			<Custom Action="LaunchApplication" Before="InstallFinalize">(&amp;WireGuardFeature = 3) AND NOT DO_NOT_LAUNCH</Custom>
 		</InstallExecuteSequence>

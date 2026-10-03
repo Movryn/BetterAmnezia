@@ -48,7 +48,7 @@
   const handlers = {
     "prefs.get": () => prefs,
     "prefs.set": p => (prefs = Object.assign(prefs, p)),
-    "app.info": () => ({ version: "3.1.1", isAdmin: !params.has("readonly"), official: true, updateState: params.has("update") ? 1 : 0, arch: "amd64", os: "Windows 11 Pro 23H2" }),
+    "app.info": () => ({ version: "1.0.0", isAdmin: !params.has("readonly"), official: true, updateState: params.has("update") ? 1 : 0, arch: "amd64", os: "Windows 11 Pro 23H2" }),
     "tunnels.list": () => tunnels.map(t => Object.assign({}, t)),
     "tunnels.get": p => ({ summary: tunnels.find(t => t.name === p.name), text: `[Interface]\nPrivateKey = yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=\nAddress = 10.8.1.2/32, fd00::2/128\nDNS = 1.1.1.1, 1.0.0.1\nMTU = 1280\nJc = 4\nJmin = 40\nJmax = 70\nS1 = 86\nS2 = 112\nH1 = 1854962112\nH2 = 902311045\nH3 = 1720419830\nH4 = 2084519734\n\n# Amsterdam\n[Peer]\nPublicKey = xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg=\nPresharedKey = 4kJ2pJ7rZ7Yfz2zKZKk9QKj1Q0b0u0+8bX5wq1i3l2Y=\nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = vpn-ams.example.net:51820\nPersistentKeepalive = 25\n` }),
     "tunnels.runtime": p => {

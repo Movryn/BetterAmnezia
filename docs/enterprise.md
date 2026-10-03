@@ -15,15 +15,15 @@ The "manager service" is responsible for displaying a UI on select users' deskto
 A tunnel service may be installed or uninstalled using the commands:
 
 ```text
-> amneziawg /installtunnelservice C:\path\to\some\myconfname.conf
-> amneziawg /uninstalltunnelservice myconfname
+> betteramnezia /installtunnelservice C:\path\to\some\myconfname.conf
+> betteramnezia /uninstalltunnelservice myconfname
 ```
 
-This creates a service called `AmneziaWGTunnel$myconfname`, which can be controlled using standard Windows service management utilites, such as `services.msc` or [`sc`](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-query).
+This creates a service called `BetterAmneziaTunnel$myconfname`, which can be controlled using standard Windows service management utilites, such as `services.msc` or [`sc`](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-query).
 
 If the configuration filename ends in `.conf`, it is interpreted as a normal [`awg-quick(8)`](https://github.com/amnezia-vpn/amneziawg-tools/blob/master/src/man/wg-quick.8) configuration file. If it ends in `.conf.dpapi`, it is considered to be that same configuration file, but encrypted using [`CryptProtectData(bytes, "myconfname")`](https://docs.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata).
 
-The tunnel service may be queried and modified at runtime using the standard [`awg(8)`](https://github.com/amnezia-vpn/amneziawg-tools/blob/master/src/man/wg.8) command line utility. If the configuration file is a `.conf.dpapi` one, then Local System or Administrator permissions is required to interact with it using `awg(8)`; otherwise users of `awg(8)` must have Local System or Administrator permissions, or permissions the same as the owner of the `.conf` file. Invocation of `awg(8)` follows usual patterns on other platforms. For example:
+BetterAmnezia tunnels use their own named pipes (`\\.\pipe\ProtectedPrefix\Administrators\BetterAmnezia\<name>`), so the `awg(8)` tool shipped with the official client does not see them; BetterAmnezia does not ship `awg.exe`. Upstream notes: the tunnel service may be queried and modified at runtime using the standard [`awg(8)`](https://github.com/amnezia-vpn/amneziawg-tools/blob/master/src/man/wg.8) command line utility. If the configuration file is a `.conf.dpapi` one, then Local System or Administrator permissions is required to interact with it using `awg(8)`; otherwise users of `awg(8)` must have Local System or Administrator permissions, or permissions the same as the owner of the `.conf` file. Invocation of `awg(8)` follows usual patterns on other platforms. For example:
 
 ```text
 > awg show myconfname
@@ -46,15 +46,15 @@ The `PreUp`, `PostUp`, `PreDown`, and `PostDown` configuration options may be sp
 The manager service may be installed or uninstalled using the commands:
 
 ```text
-> amneziawg /installmanagerservice
-> amneziawg /uninstallmanagerservice
+> betteramnezia /installmanagerservice
+> betteramnezia /uninstallmanagerservice
 ```
 
-This creates a service called `AmneziaWGManager`, which can be controlled using standard Windows service management utilites, such as `services.msc` or [`sc`](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-query).
+This creates a service called `BetterAmneziaManager`, which can be controlled using standard Windows service management utilites, such as `services.msc` or [`sc`](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/sc-query).
 
-When executing `amneziawg` with no arguments, the command first attempts to show the UI if the manager service is already running; otherwise it starts the manager service, waits for it to create a UI in the system tray, and then shows the main manager window. Therefore, `amneziawg /installmanagerservice` is suitable for silent installation, whereas `amneziawg` alone is suitable for interactive startup.
+When executing `betteramnezia` with no arguments, the command first attempts to show the UI if the manager service is already running; otherwise it starts the manager service, waits for it to create a UI in the system tray, and then shows the main manager window. Therefore, `betteramnezia /installmanagerservice` is suitable for silent installation, whereas `betteramnezia` alone is suitable for interactive startup.
 
-The manager service monitors `%ProgramFiles%\AmneziaWG\Data\Configurations\` for the addition of new `.conf` files. Upon seeing one, it encrypts the file to a `.conf.dpapi` file, makes it unreadable to users other than Local System, confers the administrator only the ability to remove it, and then deletes the original unencrypted file. (Configurations can always be _exported_ later using the export feature of the UI.) Using this, configurations can programmatically be added to the secure store of the manager service simply by copying them into that directory.
+The manager service monitors `%ProgramFiles%\BetterAmnezia\Data\Configurations\` for the addition of new `.conf` files. Upon seeing one, it encrypts the file to a `.conf.dpapi` file, makes it unreadable to users other than Local System, confers the administrator only the ability to remove it, and then deletes the original unencrypted file. (Configurations can always be _exported_ later using the export feature of the UI.) Using this, configurations can programmatically be added to the secure store of the manager service simply by copying them into that directory.
 
 The UI is started in the system tray of all builtin Administrators when the manager service is running. A limited UI may also be started in the system tray of all builtin Network Configuration Operators, if the correct registry key is set. [See `adminregistry.md` for information.](adminregistry.md)
 
@@ -63,17 +63,17 @@ The UI is started in the system tray of all builtin Administrators when the mana
 The manager and all tunnel services produce diagnostic logs in a shared ringbuffer-based log. This is shown in the UI, and also can be dumped to standard out using the command:
 
 ```text
-> amneziawg /dumplog > C:\path\to\diagnostic\log.txt
+> betteramnezia /dumplog > C:\path\to\diagnostic\log.txt
 ```
 
 Alternatively, the log can be tailed continuously, for passing it to logging services:
 
 ```text
-> amneziawg /dumplog /tail | log-ingest
+> betteramnezia /dumplog /tail | log-ingest
 ```
 
 Or it can be monitored in PowerShell by piping to `select`:
 
 ```text
-PS> amneziawg /dumplog /tail | select
+PS> betteramnezia /dumplog /tail | select
 ```

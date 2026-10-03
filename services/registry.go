@@ -4,7 +4,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-const userRegKey = `Software\AmneziaWG`
+const userRegKey = `Software\BetterAmnezia`
 
 var userKey registry.Key
 

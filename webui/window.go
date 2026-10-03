@@ -33,7 +33,7 @@ import (
 const (
 	// WindowClass is shared with the legacy UI, so that raising an already
 	// running UI works the same with either.
-	WindowClass = "AmneziaWG UI - Manage Tunnels"
+	WindowClass = "BetterAmnezia UI - Manage Tunnels"
 	// RaiseMsg is sent by a second instance to bring the window forward.
 	RaiseMsg = win.WM_USER + 0x3510
 
@@ -311,7 +311,7 @@ func (w *window) wndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uint
 }
 
 // handleCommand executes a remote control command forwarded by a second
-// instance (amneziawg.exe /connect NAME and friends). It returns 1 on
+// instance (betteramnezia.exe /connect NAME and friends). It returns 1 on
 // success, 2 when remote control is disabled and 0 on failure.
 func (w *window) handleCommand(args []string) uintptr {
 	if len(args) == 0 {

@@ -12,7 +12,8 @@ import (
 	"golang.org/x/sys/windows"
 
 	"github.com/amnezia-vpn/amneziawg-go/v3/ipc/namedpipe"
-	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
+
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 )
 
 type connectedTunnel struct {
@@ -39,7 +40,7 @@ func connectTunnelServicePipe(tunnelName string) (*connectedTunnel, error) {
 		pipe.Lock()
 		return pipe, nil
 	}
-	pipePath, err := services.PipePathOfTunnel(tunnelName)
+	pipePath, err := brand.PipePathOfTunnel(tunnelName)
 	if err != nil {
 		return nil, err
 	}

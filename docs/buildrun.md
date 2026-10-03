@@ -12,10 +12,10 @@ C:\Projects\amneziawg-windows-client> build
 
 ### Running
 
-After you've built the application, run `amd64\amneziawg.exe` or `x86\amneziawg.exe` to install the manager service and show the UI.
+After you've built the application, run `amd64\betteramnezia.exe` or `x86\betteramnezia.exe` to install the manager service and show the UI.
 
 ```text
-C:\Projects\amneziawg-windows-client> amd64\amneziawg.exe
+C:\Projects\amneziawg-windows-client> amd64\betteramnezia.exe
 ```
 
 Alternatively, you can craft your own installer using the `quickinstall.bat` script.

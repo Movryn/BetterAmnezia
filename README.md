@@ -30,13 +30,19 @@ A better [AmneziaWG](https://amnezia.org/) client for Windows. It keeps the soli
 - Remote control for scripts and automation tools, without elevation (enable it under Settings → Remote control):
 
   ```text
-  amneziawg.exe /connect <tunnel>
-  amneziawg.exe /disconnect <tunnel>
-  amneziawg.exe /toggle <tunnel>
-  amneziawg.exe /disconnectall
+  betteramnezia.exe /connect <tunnel>
+  betteramnezia.exe /disconnect <tunnel>
+  betteramnezia.exe /toggle <tunnel>
+  betteramnezia.exe /disconnectall
   ```
 
   Exit codes: 0 success, 1 failure, 2 remote control disabled, 3 BetterAmnezia not running.
+
+## Installing next to other VPN clients
+
+BetterAmnezia can be installed alongside the official AmneziaWG client, WireGuard or AmneziaVPN. It uses its own executable (`betteramnezia.exe`), services (`BetterAmneziaManager`, `BetterAmneziaTunnel$<name>`), named pipes, data folder (`%ProgramFiles%\BetterAmnezia\Data`), registry key, adapter GUIDs and installer identity, so neither client sees or changes the other's tunnels. As with any two VPNs, avoid connecting tunnels in both at the same time when they route the same traffic, and use different tunnel names if you run both at once (Windows adapter names must be unique).
+
+Upgrading from an earlier BetterAmnezia build that still used `%ProgramFiles%\AmneziaWG`: tunnels and split tunneling rules are copied over automatically on first start.
 
 ## Requirements
 
