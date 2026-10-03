@@ -17,6 +17,7 @@ import (
 	"github.com/amnezia-vpn/amneziawg-go/v3/conn"
 	"github.com/amnezia-vpn/amneziawg-go/v3/device"
 	"github.com/amnezia-vpn/amneziawg-go/v3/ipc"
+	"github.com/amnezia-vpn/amneziawg-go/v3/ipc/namedpipe"
 	"github.com/amnezia-vpn/amneziawg-go/v3/tun"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
@@ -26,6 +27,8 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows/v3/elevate"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/ringlogger"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
+
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/tunnel/winipcfg"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/version"
 )
@@ -214,7 +217,7 @@ func (service *tunnelService) Execute(args []string, r <-chan svc.ChangeRequest,
 	dev = device.NewDevice(wintun, bind, &device.Logger{Verbosef: log.Printf, Errorf: log.Printf})
 
 	log.Println("Setting interface configuration")
-	uapi, err = ipc.UAPIListen(config.Name)
+	uapi, err = uapiListen(config.Name)
 	if err != nil {
 		serviceError = services.ErrorUAPIListen
 		return
@@ -286,9 +289,19 @@ func Run(confPath string) error {
 	if err != nil {
 		return err
 	}
-	serviceName, err := services.ServiceNameOfTunnel(name)
+	serviceName, err := brand.ServiceNameOfTunnel(name)
 	if err != nil {
 		return err
 	}
 	return svc.Run(serviceName, &tunnelService{confPath})
+}
+
+// uapiListen is ipc.UAPIListen with our own pipe namespace, so tunnels do not
+// collide with the official client's tunnels of the same name.
+func uapiListen(name string) (net.Listener, error) {
+	path, err := brand.PipePathOfTunnel(name)
+	if err != nil {
+		return nil, err
+	}
+	return (&namedpipe.ListenConfig{SecurityDescriptor: ipc.UAPISecurityDescriptor}).Listen(path)
 }

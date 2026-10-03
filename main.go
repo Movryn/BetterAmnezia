@@ -24,6 +24,7 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows-client/l18n"
 	"github.com/amnezia-vpn/amneziawg-windows-client/manager"
 	"github.com/amnezia-vpn/amneziawg-windows-client/ringlogger"
+	"github.com/amnezia-vpn/amneziawg-windows-client/services"
 	"github.com/amnezia-vpn/amneziawg-windows-client/ui"
 	"github.com/amnezia-vpn/amneziawg-windows-client/updater"
 	"github.com/amnezia-vpn/amneziawg-windows-client/webui"
@@ -160,6 +161,19 @@ func main() {
 
 	setLogFile()
 	checkForWow64()
+
+	// Keep our data apart from the official AmneziaWG client. Only the
+	// elevated and service processes may create the protected directory.
+	createData := false
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "/installmanagerservice", "/managerservice", "/installtunnelservice", "/tunnelservice":
+			createData = true
+		}
+	}
+	if err := services.UseOwnDataDirectory(createData); err != nil {
+		fatal(err)
+	}
 
 	if len(os.Args) <= 1 {
 		if ui.RaiseUI() {

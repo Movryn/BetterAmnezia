@@ -507,7 +507,7 @@
     append(side, [
       h("div", { class: "brand" },
         h("div", { class: "brand-mark" }, icon("logo")),
-        h("div", { class: "brand-text" }, h("div", { class: "brand-name" }, "BetterAmnezia"), h("div", { class: "brand-sub" }, "AmneziaWG " + (state.info.version || "")))),
+        h("div", { class: "brand-text" }, h("div", { class: "brand-name" }, "BetterAmnezia"), h("div", { class: "brand-sub" }, "v" + (state.info.version || "") + " · AmneziaWG"))),
       PAGES.map(p => h("button", {
         class: "nav-item" + (state.page === p.id ? " active" : ""),
         title: t(p.label),
@@ -1406,7 +1406,7 @@
           h("button", { class: "btn small", onclick: addFolder }, icon("folder"), t("Add folder")),
           h("button", { class: "btn small primary", onclick: addApps }, icon("plus"), t("Add app"))),
         needsDriver ? h("div", { class: "card-body", style: { paddingBottom: "6px" } }, h("div", { class: "callout warn" }, icon("alert"),
-          h("div", null, h("b", null, t("Bypass needs the split tunnel driver")), h("div", null, t("Windows cannot route a single app around a VPN without a kernel driver. Place mullvad-split-tunnel.sys next to amneziawg.exe or pick it in Settings → Split tunnel driver. Without it, bypass rules are ignored; “VPN only” and “Block” always work."))))) : null,
+          h("div", null, h("b", null, t("Bypass needs the split tunnel driver")), h("div", null, t("Windows cannot route a single app around a VPN without a kernel driver. Place mullvad-split-tunnel.sys next to betteramnezia.exe or pick it in Settings → Split tunnel driver. Without it, bypass rules are ignored; “VPN only” and “Block” always work."))))) : null,
         h("div", { style: { paddingTop: "8px" } },
           draft.apps.length ? draft.apps.map((a, i) => appRow(a, i)) : h("div", { class: "muted", style: { padding: "8px 18px 18px" } }, t("No app rules yet."))));
     }
@@ -1759,7 +1759,7 @@
           h("div", { class: "card-body" },
             h("div", { class: "muted", style: { fontSize: "12.5px", marginBottom: "8px" } }, t("Lets scripts and automation tools connect tunnels without elevation:")),
             h("pre", { class: "mono", style: { margin: 0, padding: "10px 12px", background: "var(--code-bg)", border: "1px solid var(--border)", borderRadius: "8px", whiteSpace: "pre-wrap" } },
-              "amneziawg.exe /connect <tunnel>\namneziawg.exe /disconnect <tunnel>\namneziawg.exe /toggle <tunnel>\namneziawg.exe /disconnectall"))),
+              "betteramnezia.exe /connect <tunnel>\nbetteramnezia.exe /disconnect <tunnel>\nbetteramnezia.exe /toggle <tunnel>\nbetteramnezia.exe /disconnectall"))),
 
         h("div", { class: "section-title" }, t("Advanced")),
         h("div", { class: "card" },

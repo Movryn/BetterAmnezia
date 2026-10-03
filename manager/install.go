@@ -17,7 +17,8 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
-	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
+
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 )
 
 var cachedServiceManager *mgr.Mgr
@@ -48,7 +49,7 @@ func InstallManager() error {
 
 	// TODO: Do we want to bail if executable isn't being run from the right location?
 
-	serviceName := "AmneziaWGManager"
+	serviceName := brand.ManagerServiceName
 	service, err := m.OpenService(serviceName)
 	if err == nil {
 		status, err := service.Query()
@@ -61,7 +62,7 @@ func InstallManager() error {
 			if status.State == svc.StartPending {
 				// We were *just* started by something else, so return success here, assuming the other program
 				// starting this does the right thing. This can happen when, e.g., the updater relaunches the
-				// manager service and then invokes amneziawg.exe to raise the UI.
+				// manager service and then invokes betteramnezia.exe to raise the UI.
 				return nil
 			}
 			return ErrManagerAlreadyRunning
@@ -85,7 +86,7 @@ func InstallManager() error {
 		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
 		StartType:    mgr.StartAutomatic,
 		ErrorControl: mgr.ErrorNormal,
-		DisplayName:  "AmneziaWG Manager",
+		DisplayName:  "BetterAmnezia Manager",
 	}
 
 	service, err = m.CreateService(serviceName, path, config, "/managerservice")
@@ -101,7 +102,7 @@ func UninstallManager() error {
 	if err != nil {
 		return err
 	}
-	serviceName := "AmneziaWGManager"
+	serviceName := brand.ManagerServiceName
 	service, err := m.OpenService(serviceName)
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func InstallTunnel(configPath string) error {
 		return err
 	}
 
-	serviceName, err := services.ServiceNameOfTunnel(name)
+	serviceName, err := brand.ServiceNameOfTunnel(name)
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,7 @@ func InstallTunnel(configPath string) error {
 		StartType:    mgr.StartAutomatic,
 		ErrorControl: mgr.ErrorNormal,
 		Dependencies: []string{"Nsi", "TcpIp"},
-		DisplayName:  "AmneziaWG Tunnel: " + name,
+		DisplayName:  "BetterAmnezia Tunnel: " + name,
 		SidType:      windows.SERVICE_SID_TYPE_UNRESTRICTED,
 	}
 	service, err = m.CreateService(serviceName, path, config, "/tunnelservice", configPath)
@@ -183,7 +184,7 @@ func UninstallTunnel(name string) error {
 	if err != nil {
 		return err
 	}
-	serviceName, err := services.ServiceNameOfTunnel(name)
+	serviceName, err := brand.ServiceNameOfTunnel(name)
 	if err != nil {
 		return err
 	}
@@ -211,7 +212,7 @@ func changeTunnelServiceConfigFilePath(name, oldPath, newPath string) {
 	if err != nil {
 		return
 	}
-	serviceName, err := services.ServiceNameOfTunnel(name)
+	serviceName, err := brand.ServiceNameOfTunnel(name)
 	if err != nil {
 		return
 	}

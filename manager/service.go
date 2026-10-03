@@ -62,6 +62,8 @@ func (service *managerService) Execute(args []string, r <-chan svc.ChangeRequest
 		return
 	}
 
+	migrateFromSharedDirectory()
+
 	err = watchNewTunnelServices()
 	if err != nil {
 		serviceError = services.ErrorTrackTunnels
@@ -352,7 +354,7 @@ loop:
 }
 
 func Run() error {
-	return svc.Run("AmneziaWGManager", &managerService{})
+	return svc.Run(services.ManagerServiceName, &managerService{})
 }
 
 func LogFile(createRoot bool) (string, error) {

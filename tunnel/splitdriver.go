@@ -24,6 +24,7 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows/v3/tunnel/winipcfg"
 
 	"github.com/amnezia-vpn/amneziawg-windows-client/extras"
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 	"github.com/amnezia-vpn/amneziawg-windows-client/tunnel/firewall"
 )
 
@@ -34,7 +35,7 @@ import (
 
 const (
 	splitDriverDevice      = `\\.\MULLVADSPLITTUNNEL`
-	splitDriverServiceName = "AmneziaWGSplitTunnel"
+	splitDriverServiceName = brand.SplitDriverServiceName
 	splitDriverFileName    = "mullvad-split-tunnel.sys"
 
 	stDeviceType = 0x8000
@@ -133,7 +134,7 @@ func loadSplitDriver() (windows.Handle, error) {
 			ServiceType:  windows.SERVICE_KERNEL_DRIVER,
 			StartType:    mgr.StartManual,
 			ErrorControl: mgr.ErrorNormal,
-			DisplayName:  "AmneziaWG split tunnel driver",
+			DisplayName:  "BetterAmnezia split tunnel driver",
 		})
 		if err != nil {
 			return 0, fmt.Errorf("unable to install split tunnel driver: %w", err)

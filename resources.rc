@@ -28,13 +28,13 @@ BEGIN \
   BEGIN \
     BLOCK block_id \
     BEGIN \
-      VALUE "CompanyName", "Amnezia" \
+      VALUE "CompanyName", "BetterAmnezia" \
       VALUE "FileDescription", file_desc \
       VALUE "FileVersion", EXPAND(WIREGUARD_VERSION_STR) \
-      VALUE "InternalName", "amneziawg-windows-client" \
+      VALUE "InternalName", "betteramnezia" \
       VALUE "LegalCopyright", "Copyright © 2015-2022 Jason A. Donenfeld. WireGuard is a trademark of Jason A. Donenfeld.\nCopyright © 2024 AmneziaVPN. AmneziaWG is based on WireGuard, changes and modifications made by AmneziaVPN. All Rights Reserved." \
-      VALUE "OriginalFilename", "amneziawg.exe" \
-      VALUE "ProductName", "AmneziaWG" \
+      VALUE "OriginalFilename", "betteramnezia.exe" \
+      VALUE "ProductName", "BetterAmnezia" \
       VALUE "ProductVersion", EXPAND(WIREGUARD_VERSION_STR) \
       VALUE "Comments", comments \
     END \
@@ -48,7 +48,7 @@ END
 LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
 VERSIONINFO_TEMPLATE(
   "040904b0", 0x409, 0x4b0,
-  "AmneziaWG: Fast, Modern, Secure VPN Tunnel",
+  "BetterAmnezia: AmneziaWG client with split tunneling",
   "https://amnezia.org/"
 )
 

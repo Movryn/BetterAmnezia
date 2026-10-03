@@ -22,6 +22,8 @@ import (
 
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
+
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 )
 
 var (
@@ -280,7 +282,7 @@ func trackExistingTunnels() error {
 			continue
 		}
 		trackedTunnelsLock.Unlock()
-		serviceName, err := services.ServiceNameOfTunnel(name)
+		serviceName, err := brand.ServiceNameOfTunnel(name)
 		if err != nil {
 			continue
 		}

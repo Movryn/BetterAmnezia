@@ -18,7 +18,9 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
 )
 
-const deterministicGUIDLabel = "Deterministic WireGuard Windows GUID v1 jason@zx2c4.com"
+// The label differs from upstream so the same configuration imported into
+// BetterAmnezia and into the official client gets different adapter GUIDs.
+const deterministicGUIDLabel = "Deterministic BetterAmnezia Windows GUID v1"
 const fixedGUIDLabel = "Fixed WireGuard Windows GUID v1 jason@zx2c4.com"
 
 // Escape hatch for external consumers, not us.

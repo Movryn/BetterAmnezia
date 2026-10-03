@@ -15,7 +15,7 @@ RESOURCE_FILES := resources.rc version/version.go manifest.xml $(patsubst %.svg,
 DEPLOYMENT_HOST ?= winvm
 DEPLOYMENT_PATH ?= Desktop
 
-all: amd64/amneziawg.exe x86/amneziawg.exe
+all: amd64/betteramnezia.exe x86/betteramnezia.exe
 
 define download =
 .distfiles/$(1):
@@ -53,16 +53,16 @@ resources_386.syso: $(RESOURCE_FILES)
 resources_arm64.syso: $(RESOURCE_FILES)
 	aarch64-w64-mingw32-windres $(RCFLAGS) -i $< -o $@
 
-amd64/amneziawg.exe: export GOARCH := amd64
-amd64/amneziawg.exe: amd64/wintun.dll resources_amd64.syso $(SOURCE_FILES)
+amd64/betteramnezia.exe: export GOARCH := amd64
+amd64/betteramnezia.exe: amd64/wintun.dll resources_amd64.syso $(SOURCE_FILES)
 	go build $(GOFLAGS) -o $@
 
-x86/amneziawg.exe: export GOARCH := 386
-x86/amneziawg.exe: x86/wintun.dll resources_386.syso $(SOURCE_FILES)
+x86/betteramnezia.exe: export GOARCH := 386
+x86/betteramnezia.exe: x86/wintun.dll resources_386.syso $(SOURCE_FILES)
 	go build $(GOFLAGS) -o $@
 
-arm64/amneziawg.exe: export GOARCH := arm64
-arm64/amneziawg.exe: resources_arm64.syso $(SOURCE_FILES)
+arm64/betteramnezia.exe: export GOARCH := arm64
+arm64/betteramnezia.exe: resources_arm64.syso $(SOURCE_FILES)
 	go build $(GOFLAGS) -o $@
 
 amd64/wintun.dll:
@@ -93,8 +93,8 @@ crowdin:
 	find locales -name messages.gotext.json -exec bash -c '[[ $$(jq ".messages | length" {}) -ne 0 ]] || rm -rf "$$(dirname {})"' \;
 	@$(MAKE) --no-print-directory generate
 
-deploy: amd64/amneziawg.exe
-	-ssh $(DEPLOYMENT_HOST) -- 'taskkill /im amneziawg.exe /f'
+deploy: amd64/betteramnezia.exe
+	-ssh $(DEPLOYMENT_HOST) -- 'taskkill /im betteramnezia.exe /f'
 	scp $< $(DEPLOYMENT_HOST):$(DEPLOYMENT_PATH)
 
 clean:

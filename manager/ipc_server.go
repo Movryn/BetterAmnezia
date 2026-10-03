@@ -22,7 +22,8 @@ import (
 	"github.com/amnezia-vpn/amneziawg-windows-client/extras"
 	"github.com/amnezia-vpn/amneziawg-windows-client/updater"
 	"github.com/amnezia-vpn/amneziawg-windows/v3/conf"
-	"github.com/amnezia-vpn/amneziawg-windows/v3/services"
+
+	brand "github.com/amnezia-vpn/amneziawg-windows-client/services"
 )
 
 var (
@@ -148,7 +149,7 @@ func (s *ManagerService) Stop(tunnelName string) error {
 }
 
 func (s *ManagerService) WaitForStop(tunnelName string) error {
-	serviceName, err := services.ServiceNameOfTunnel(tunnelName)
+	serviceName, err := brand.ServiceNameOfTunnel(tunnelName)
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ func (s *ManagerService) Delete(tunnelName string) error {
 }
 
 func (s *ManagerService) State(tunnelName string) (TunnelState, error) {
-	serviceName, err := services.ServiceNameOfTunnel(tunnelName)
+	serviceName, err := brand.ServiceNameOfTunnel(tunnelName)
 	if err != nil {
 		return 0, err
 	}
