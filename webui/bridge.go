@@ -98,6 +98,7 @@ func newBridge(w *window) *bridge {
 		"clipboard.read":      b.clipboardRead,
 		"clipboard.write":     b.clipboardWrite,
 		"shell.openURL":       b.openURL,
+		"awg.scan":            b.awgScan,
 		"update.status":       b.updateStatus,
 		"update.check":        b.updateCheck,
 		"update.install":      b.updateInstall,
