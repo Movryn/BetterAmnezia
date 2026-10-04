@@ -18,7 +18,7 @@ jobs:
           go-version-file: go.mod
 
       - name: unit tests
-        run: go test -race ./splittunnel ./extras ./importer ./ghupdate
+        run: go test -race ./splittunnel ./extras ./importer ./ghupdate ./awgprobe
 
       - name: build for windows
         run: |

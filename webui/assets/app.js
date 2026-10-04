@@ -142,6 +142,7 @@
   function on(event, fn) {
     if (!listeners.has(event)) listeners.set(event, []);
     listeners.get(event).push(fn);
+    return () => { const l = listeners.get(event); const i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); };
   }
 
   // ------------------------------------------------------------------
@@ -1016,6 +1017,87 @@
     return null;
   }
 
+  // ------------------------------------------------------------------
+  // AmneziaWG parameters
+  // ------------------------------------------------------------------
+
+  const AWG_PARAM_KEYS = ["jc", "jmin", "jmax", "s1", "s2", "s3", "s4", "h1", "h2", "h3", "h4"];
+  // Junk packets in front of the handshake, standard WireGuard headers: works
+  // with plain WireGuard servers and AmneziaWG servers without custom headers.
+  const AWG_DEFAULT = { jc: 4, jmin: 40, jmax: 70, h1: "1", h2: "2", h3: "3", h4: "4" };
+
+  function randomAwg() {
+    const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    return { jc: rnd(3, 6), jmin: 40, jmax: 70, s1: rnd(15, 150), s2: rnd(15, 150), h1: String(rnd(5, 2147483647)), h2: String(rnd(5, 2147483647)), h3: String(rnd(5, 2147483647)), h4: String(rnd(5, 2147483647)) };
+  }
+
+  // setAwgParams replaces the obfuscation lines of the [Interface] section.
+  // Zero or empty values are left out.
+  function setAwgParams(text, p) {
+    const out = [];
+    let section = "", insertAt = -1;
+    for (const line of text.split(/\r?\n/)) {
+      const sec = /^\s*\[(\w+)\]\s*$/.exec(line);
+      if (sec) section = sec[1].toLowerCase();
+      const kv = /^\s*(\w+)\s*=/.exec(line);
+      if (section === "interface" && kv && AWG_PARAM_KEYS.includes(kv[1].toLowerCase())) continue;
+      out.push(line);
+      // The block goes right after the last setting of [Interface].
+      if (section === "interface" && (sec || kv)) insertAt = out.length;
+    }
+    if (insertAt < 0) {
+      out.unshift("[Interface]");
+      insertAt = 1;
+    }
+    const names = { jc: "Jc", jmin: "Jmin", jmax: "Jmax", s1: "S1", s2: "S2", s3: "S3", s4: "S4", h1: "H1", h2: "H2", h3: "H3", h4: "H4" };
+    const block = AWG_PARAM_KEYS.filter(k => p[k] && String(p[k]) !== "0").map(k => names[k] + " = " + p[k]);
+    out.splice(insertAt, 0, ...block);
+    return out.join("\n");
+  }
+
+  const SCAN_NAMES = {
+    "current": "Current settings",
+    "current-light": "Current headers, light junk",
+    "current-heavy": "Current headers, heavy junk",
+    "default": "Default",
+    "default-heavy": "Default, heavy junk",
+    "wireguard": "Plain WireGuard (no junk)"
+  };
+
+  // smartAwg tests parameter sets against the server and applies the one
+  // with the fastest handshake.
+  function smartAwg(text, apply) {
+    const list = h("div", { class: "scan-list" });
+    const status = h("p", { class: "muted", style: { margin: "4px 0 10px" } }, t("Trying handshakes with the server. This takes up to a minute."));
+    let applyBtn, best = null, done = false;
+    const row = r => h("div", { class: "scan-row" + (r.ok ? " ok" : " bad") },
+      h("span", { class: "dot " + (r.ok ? "started" : "error") }),
+      h("span", { class: "grow" }, t(SCAN_NAMES[r.name] || r.name)),
+      h("span", { class: "muted mono" }, r.ok ? r.rttMs + " ms" : t("no handshake")));
+    const off = on("awgScan", d => { if (!done && d && d.result) { list.appendChild(row(d.result)); status.textContent = t("Tested {0} of {1}…", d.done, d.total); } });
+    const m = modal({
+      title: t("Smart parameters"),
+      body: h("div", null, status, list),
+      foot: [h("div", { class: "spacer" }),
+        h("button", { class: "btn", onclick: () => m.close() }, t("Close")),
+        applyBtn = h("button", { class: "btn primary", disabled: true, onclick: () => { if (best) { apply(best); toast("ok", t("Parameters set: {0}", t(SCAN_NAMES[best.name] || best.name))); } m.close(); } }, t("Apply"))],
+      onClose: () => { done = true; off && off(); }
+    });
+    call("awg.scan", { text }).then(res => {
+      if (done) return;
+      list.replaceChildren(...(res.results || []).map(row));
+      best = res.best || null;
+      if (best) {
+        status.textContent = t("Best: {0} ({1} ms). Apply it to the configuration?", t(SCAN_NAMES[best.name] || best.name), best.rttMs);
+        applyBtn.disabled = false;
+        applyBtn.focus();
+      } else {
+        status.textContent = t("None of the settings reached the server. Check the endpoint and keys, or ask the server's admin for its AmneziaWG parameters.");
+        status.className = "bad-text";
+      }
+    }).catch(e => { status.textContent = e.message || String(e); status.className = "bad-text"; });
+  }
+
   function setKillSwitch(text, on) {
     return text.replace(/^(\s*allowedips\s*=\s*)(.*)$/im, (all, pre, list) => {
       let ips = list.split(",").map(s => s.trim()).filter(Boolean);
@@ -1134,18 +1216,20 @@
         h("div", { class: "card", style: { padding: "14px" } },
           h("div", { class: "muted", style: { fontSize: "12px", marginBottom: "8px" } }, t("Insert")),
           h("div", { class: "vstack" },
-            h("button", { class: "btn small", onclick: () => insert("[Peer]\nPublicKey = \nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = \nPersistentKeepalive = 25") }, icon("plus"), t("Peer section")),
-            h("button", {
-              class: "btn small", onclick: () => {
-                if (/^\s*jc\s*=/im.test(textarea.value)) return;
-                const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-                const block = `Jc = ${rnd(3, 6)}\nJmin = 40\nJmax = 70\nS1 = ${rnd(15, 150)}\nS2 = ${rnd(15, 150)}\nH1 = ${rnd(5, 2147483647)}\nH2 = ${rnd(5, 2147483647)}\nH3 = ${rnd(5, 2147483647)}\nH4 = ${rnd(5, 2147483647)}`;
-                textarea.value = textarea.value.replace(/^(\s*\[peer\]\s*)$/im, block + "\n\n$1");
-                if (!/^\s*jc\s*=/im.test(textarea.value)) textarea.value += "\n" + block;
-                sync();
-              }
-            }, icon("sparkle"), t("AmneziaWG parameters")))),
+            h("button", { class: "btn small", onclick: () => insert("[Peer]\nPublicKey = \nAllowedIPs = 0.0.0.0/0, ::/0\nEndpoint = \nPersistentKeepalive = 25") }, icon("plus"), t("Peer section")))),
+        h("div", { class: "card", style: { padding: "14px" } },
+          h("div", { class: "muted", style: { fontSize: "12px", marginBottom: "8px" } }, t("AmneziaWG parameters")),
+          h("div", { class: "vstack" },
+            h("button", { class: "btn small", title: t("Jc 4, Jmin 40, Jmax 70, H1–H4 = 1–4. Works with plain WireGuard servers."), onclick: () => { applyAwg(AWG_DEFAULT); toast("ok", t("Default parameters set")); } }, icon("check"), t("Default")),
+            h("button", { class: "btn small", title: t("Tests which parameters connect best on this network."), onclick: () => smartAwg(textarea.value, p => applyAwg(p)) }, icon("bolt"), t("Smart")),
+            h("button", { class: "btn small", title: t("Random headers and padding. The server must use the same values."), onclick: () => applyAwg(randomAwg()) }, icon("sparkle"), t("Randomized"))),
+          h("div", { class: "muted", style: { fontSize: "11.5px", marginTop: "8px" } }, t("S1, S2 and H1–H4 must match the server. Default works with WireGuard servers."))),
         running ? h("div", { class: "callout" }, icon("info"), h("span", null, t("The tunnel is running and will reconnect to apply changes."))) : null));
+
+    function applyAwg(params) {
+      textarea.value = setAwgParams(textarea.value, params);
+      sync();
+    }
 
     let saving = false;
     const save = async () => {

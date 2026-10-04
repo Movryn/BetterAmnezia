@@ -48,6 +48,11 @@ var nativeRU = map[string]string{
 	"A new version is available. Click to see what's new.":                                            "Доступна новая версия. Нажмите, чтобы узнать подробности.",
 	"This copy was not installed with the installer. Download the new version from the release page.": "Эта копия установлена без установщика. Скачайте новую версию на странице релиза.",
 	"The update is already being downloaded.":                                                         "Обновление уже загружается.",
+	"The configuration needs a peer with an endpoint.":                                                "В конфигурации нужен пир с адресом сервера.",
+	"The configuration needs an interface address.":                                                   "В конфигурации нужен адрес интерфейса.",
+	"The peer has no allowed IPs of the interface's address family.":                                  "У пира нет разрешённых адресов того же типа, что и адрес интерфейса.",
+	"Disconnect this tunnel first: the test would interrupt its connection.":                          "Сначала отключите этот туннель: проверка прервёт его соединение.",
+	"A scan is already running.":                                                                      "Проверка уже выполняется.",
 	"No update is available.":                                                                         "Обновлений нет.",
 	"The release has no installer for this computer.":                                                 "В релизе нет установщика для этого компьютера.",
 }

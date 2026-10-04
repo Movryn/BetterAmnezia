@@ -49,6 +49,15 @@
   const handlers = {
     "prefs.get": () => prefs,
     "prefs.set": p => (prefs = Object.assign(prefs, p)),
+    "awg.scan": () => new Promise(resolve => {
+      const rs = [
+        { name: "current", ok: false, rttMs: 0, error: "no handshake" },
+        { name: "default", ok: true, rttMs: 84, jc: 4, jmin: 40, jmax: 70, h1: "1", h2: "2", h3: "3", h4: "4" },
+        { name: "default-heavy", ok: true, rttMs: 97, jc: 8, jmin: 64, jmax: 512, h1: "1", h2: "2", h3: "3", h4: "4" },
+        { name: "wireguard", ok: false, rttMs: 0, error: "no handshake" }];
+      rs.forEach((r, i) => setTimeout(() => emit("awgScan", { done: i + 1, total: rs.length, result: r }), 250 * (i + 1)));
+      setTimeout(() => resolve({ results: rs, best: rs[1] }), 250 * rs.length + 100);
+    }),
     "update.status": () => upd,
     "update.check": () => upd,
     "update.install": () => {
